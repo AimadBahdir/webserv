@@ -1,9 +1,6 @@
 
 #pragma once
-#include <iostream>
-#include <map>
-#include <vector>
-#include <pair>
+#include "../configStructs.cpp"
 
 class Responder
 {

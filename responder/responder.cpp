@@ -22,7 +22,7 @@ Responder::~Responder()
 std::string Responder::Response(request_map request)
 {
     
-    return (request["Methode"]);
+    return (request["URI"]);
 }
 
 

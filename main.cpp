@@ -8,7 +8,7 @@ int main()
     std::map<std::string, std::string> requestData;
 
     requestData.insert(std::make_pair("Methode", "GET"));
-    requestData.insert(std::make_pair("Path", "/"));
+    requestData.insert(std::make_pair("URI", "/"));
     requestData.insert(std::make_pair("Version", "HTTP/1.1"));
     requestData.insert(std::make_pair("Host", "127.0.0.1"));
     requestData.insert(std::make_pair("Port", "8000"));
@@ -38,20 +38,20 @@ int main()
     srv1.error_pages.push_back("./50x.html");
 
     location loc1;
-    loc1.path = "/home";
+    loc1.location_path = "/home";
     loc1.auto_index = false;
-    loc1.cgi = "/Users/etc/cgi";
+    loc1.cgi_path = "/Users/etc/cgi";
     loc1.index.push_back("index.html");
     loc1.index.push_back("index.htm");
-    loc1.root = "/Users/home/";
+    loc1.root_path = "/Users/home/";
 
     location loc2;
-    loc2.path = "/about";
+    loc2.location_path = "/about";
     loc2.auto_index = true;
-    loc2.cgi = "/Users/etc/cgi";
+    loc2.cgi_path = "/Users/etc/cgi";
     loc2.index.push_back("index.html");
     loc2.index.push_back("index.htm");
-    loc2.root = "/Users/about/";
+    loc2.root_path = "/Users/about/";
 
     srv1.locations.push_back(loc1);
     srv1.locations.push_back(loc2);
