@@ -1,24 +1,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
-
-struct location
-{
-    std::string path;
-    std::string root;
-    std::string cgi;
-    std::vector<std::string> index;
-    bool auto_index;
-};
-
-struct server
-{
-    std::vector<std::string> names;
-    std::string host;
-    std::string port;
-    std::vector<std::string> error_page;
-    std::vector<location> locations;
-};
+#include "./responder/responder.hpp"
 
 int main()
 {
@@ -27,7 +10,6 @@ int main()
     requestData.insert(std::make_pair("Methode", "GET"));
     requestData.insert(std::make_pair("Path", "/"));
     requestData.insert(std::make_pair("Version", "HTTP/1.1"));
-    requestData.insert(std::make_pair("Methode", "GET"));
     requestData.insert(std::make_pair("Host", "127.0.0.1"));
     requestData.insert(std::make_pair("Port", "8000"));
     requestData.insert(std::make_pair("Connection", "keep-alive"));
@@ -42,20 +24,18 @@ int main()
     requestData.insert(std::make_pair("Accept-Encoding", "gzip, deflate, br"));
     requestData.insert(std::make_pair("Accept-Language", "en-US,en;q=0.9"));
 
-    std::cout << requestData["Methode"] << std::endl;
-
     std::vector<server> servers;
-    
+
     server srv1;
     srv1.host = "0.0.0.0";
     srv1.port = "8000";
     srv1.names.push_back("server1");
     srv1.names.push_back("server2");
     srv1.names.push_back("server3");
-    srv1.error_page.push_back("500");
-    srv1.error_page.push_back("501");
-    srv1.error_page.push_back("502");
-    srv1.error_page.push_back("./50x.html");
+    srv1.error_pages.push_back("500");
+    srv1.error_pages.push_back("501");
+    srv1.error_pages.push_back("502");
+    srv1.error_pages.push_back("./50x.html");
 
     location loc1;
     loc1.path = "/home";
@@ -77,7 +57,9 @@ int main()
     srv1.locations.push_back(loc2);
     servers.push_back(srv1);
 
-    
+    Responder r(servers);
+
+    std::cout << r.Response(requestData) << std::endl;
 
     return (0);
 }
