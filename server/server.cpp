@@ -6,7 +6,7 @@
 /*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:36 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/02/20 14:51:32 by wben-sai         ###   ########.fr       */
+/*   Updated: 2022/02/20 14:52:30 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -166,7 +166,7 @@ void server::ManagementFDs()
                         _accept();
                     else
                        _recv(it->first);
-                }
+                }   
             }
         }
     }
