@@ -72,7 +72,6 @@ int main()
     {
         res = resp.Read(1);
         std::cout << res.second;
-        // sleep(1);
         if (res.first)
             break;
     }
