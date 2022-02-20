@@ -2,14 +2,19 @@
 #include <map>
 #include <vector>
 #include "./responder/responder.hpp"
+#include "./responder/response.hpp"
 
+#include <unistd.h>
 int main()
 {
     std::map<std::string, std::string> requestData;
 
+    requestData.insert(std::make_pair("Error", "300"));
     requestData.insert(std::make_pair("Methode", "GET"));
-    requestData.insert(std::make_pair("URI", "/"));
-    requestData.insert(std::make_pair("Version", "HTTP/1.1"));
+    requestData.insert(std::make_pair("URI", "/Users/abahdir/Desktop/webserv/Makefile"));
+    requestData.insert(std::make_pair("Version", "HTTP/3"));
+    requestData.insert(std::make_pair("Queries", "requestData"));
+    ////////////////
     requestData.insert(std::make_pair("Host", "127.0.0.1"));
     requestData.insert(std::make_pair("Port", "8000"));
     requestData.insert(std::make_pair("Connection", "keep-alive"));
@@ -23,6 +28,8 @@ int main()
     requestData.insert(std::make_pair("Sec-Fetch-Dest", "document"));
     requestData.insert(std::make_pair("Accept-Encoding", "gzip, deflate, br"));
     requestData.insert(std::make_pair("Accept-Language", "en-US,en;q=0.9"));
+    ///////////////
+    requestData.insert(std::make_pair("body", "/body"));
 
     std::vector<server> servers;
 
@@ -57,9 +64,18 @@ int main()
     srv1.locations.push_back(loc2);
     servers.push_back(srv1);
 
-    Responder r(servers);
+    Responder r(servers[0]);
 
-    std::cout << r.Response(requestData) << std::endl;
+    std::pair<bool, std::string> res;
+    Response resp(r.Response(requestData));
+    while (true)
+    {
+        res = resp.Read(1);
+        std::cout << res.second;
+        // sleep(1);
+        if (res.first)
+            break;
+    }
 
     return (0);
 }

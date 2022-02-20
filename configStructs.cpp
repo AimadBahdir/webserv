@@ -22,5 +22,5 @@ struct server
     std::vector<std::string> names;
     std::vector<std::string> error_pages;
     std::vector<location> locations;
-    int clientMaxBodySize;
+    int clientMaxBodySize;  
 };

@@ -1,6 +1,6 @@
 #include "./responder.hpp"
 
-Responder::Responder(servers_vec servers) : _servers(servers) {}
+Responder::Responder(server srv) : _server(srv) {}
 
 Responder::Responder(Responder const & r)
 {
@@ -9,7 +9,7 @@ Responder::Responder(Responder const & r)
 
 Responder& Responder::operator=(Responder const & r)
 {
-    this->_servers = r._servers;
+    this->_server = r._server;
     return (*this);
 }
 
@@ -17,7 +17,8 @@ Responder::~Responder() {}
 
 std::string Responder::Response(request_map request)
 {
-    
+    // if (request["Methode"] == "GET")
+        
     return (request["URI"]);
 }
 
