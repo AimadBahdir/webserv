@@ -6,7 +6,7 @@
 /*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:36 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/02/20 14:53:00 by wben-sai         ###   ########.fr       */
+/*   Updated: 2022/02/20 14:54:37 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -164,7 +164,7 @@ void server::ManagementFDs()
                 {
                     if(it->first == sock)
                         _accept();
-                    else
+                    else 
                        _recv(it->first);
                 }   
             }
