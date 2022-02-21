@@ -1,32 +1,30 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   server.cpp                                         :+:      :+:    :+:   */
+/*   sock_server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:36 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/02/20 14:54:37 by wben-sai         ###   ########.fr       */
+/*   Updated: 2022/02/21 09:52:27 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "server.hpp"
+#include "sock_server.hpp"
 
-server::server(int Pport ,const char *host)
+sock_server::sock_server(std::vector<server> servers)
 {
-    PORT = Pport;
-    
-    srv.sin_family = AF_INET;
-    srv.sin_port = htons(PORT);
-    srv.sin_addr.s_addr = inet_addr(host);
-    
-    _create_socket();
-    _bind();
-    _listen();
+   
+    for (std::vector<server>::iterator it = servers.begin(); it != servers.end(); it++)
+    {
+        _create_socket();
+        _bind(it->port, it->host);
+        _listen();
+    }
     ManagementFDs();
 }
 
-void server::_create_socket()
+void sock_server::_create_socket()
 {
     /* ----------------------------------------------------------------------------------------
     int sockId = socket(domain, type, protocol) 
@@ -44,17 +42,27 @@ void server::_create_socket()
             UDP     17      # user datagram protocol 
             ...
     ---------------------------------------------------------------------------------------- */
-    
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    int fd_sock;
+    if ((fd_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
         std::cout << "Failed to create a socket" << std::endl;
         exit(1);
     }
     else
-        std::cout << "socket ID = " << sock << std::endl;
+    {
+        FD_SET(fd_sock, &FDs_readability);
+
+        list_socket_server.push_back(fd_sock);
+
+        std::pair<int, std::string> first(fd_sock, "server " + fd_sock);
+        std::pair<std::string, std::string> second("request", "response");
+        FSRR.insert(std::make_pair(first, second));
+
+        std::cout << "socket ID = " << fd_sock << std::endl;
+    }
 }
 
-void server::_bind()
+void sock_server::_bind(size_t port, std::string host)
 {
     /* ----------------------------------------------------------------------------------------
     int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
@@ -69,9 +77,13 @@ void server::_bind()
            |       ...        |              "                = inet_addr("127.0.0.1");   // Prmit any client request         |    
         addrlen : sizeof(sockAddress);
     ---------------------------------------------------------------------------------------- */
-    
-    if (bind(sock, (sockaddr*)&srv, sizeof(srv)) == 0)
-        std::cout << "server is binded to port "<< PORT << std::endl;
+    struct sockaddr_in srv;
+    srv.sin_family = AF_INET;
+    srv.sin_port = htons(port);
+    srv.sin_addr.s_addr = inet_addr(host.c_str());
+
+    if (bind(*(list_socket_server.rbegin()), (sockaddr*)&srv, sizeof(srv)) == 0)
+        std::cout << "server is binded to port "<< port << std::endl;
     else
     {
         std::cout << "binding failed" <<  std::endl;
@@ -79,7 +91,7 @@ void server::_bind()
     }
 }
 
-void server::_listen()
+void sock_server::_listen()
 {
     /* ----------------------------------------------------------------------------------------
     int accept(int sockfd, struct sockaddr *restrict addr, socklen_t *restrict addrlen);
@@ -90,7 +102,7 @@ void server::_listen()
         -- Note : listen() is used by the server only as a way to get new sockets.
     ---------------------------------------------------------------------------------------- */
     
-    if (listen(sock, 1) == 0)
+    if (listen(*(list_socket_server.rbegin()), 1) == 0)
         std::cout << "listenning ..." << std::endl;
     else
     {
@@ -99,7 +111,7 @@ void server::_listen()
     }
 }
 
-void server::_accept()
+void sock_server::_accept()
 {
     // 6 - accept the connection request
     int connectionServerSockFD = accept(sock, NULL, 0);
@@ -114,7 +126,7 @@ void server::_accept()
     std::cout << "Client with Id " << connectionServerSockFD << " is connect" << std::endl; 
 }
 
-void server::_recv(int FDs)
+void sock_server::_recv(int FDs)
 {
    char buf[1024];
     ssize_t lenString = recv(FDs, buf, (sizeof(buf)), 0);
@@ -135,9 +147,9 @@ void server::_recv(int FDs)
     }
 }
 
-int server::_select()
+int sock_server::_select()
 {
-    int res = select(FD_MAP.rbegin()->first + 1, &FDs_readability_copy, NULL, NULL, 0);
+    int res = select((FSRR.rbegin()->first).first + 1, &FDs_readability_copy, NULL, NULL, 0);
     if (res == -1)
     {
         std::cout << "Select failed" <<  std::endl;
@@ -147,10 +159,8 @@ int server::_select()
 }
 
 
-void server::ManagementFDs()
+void sock_server::ManagementFDs()
 {
-    FD_SET(sock, &FDs_readability);
-    FD_MAP.insert(std::pair<int, std::string>(sock, ""));
     while (true)
     {
         FDs_readability_copy = FDs_readability;
@@ -158,14 +168,15 @@ void server::ManagementFDs()
         
         if (_select() != 0)
         {
-            for (std::map<int , std::string>::iterator it = FD_MAP.begin(); it != FD_MAP.end(); it++)
+            for (std::map<std::pair<int, std::string>, std::pair<std::string, std::string> >::iterator it = FSRR.begin(); it != FSRR.end(); it++)
             {
-                if (FD_ISSET(it->first , &FDs_readability_copy))
+                if (FD_ISSET((it->first).first , &FDs_readability_copy))
                 {
-                    if(it->first == sock)
+                    
+                    if((it->first).first == sock)
                         _accept();
                     else 
-                       _recv(it->first);
+                       _recv((it->first).first);
                 }   
             }
         }
