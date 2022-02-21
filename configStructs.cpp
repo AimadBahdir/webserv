@@ -18,7 +18,7 @@ struct location
 struct server
 {
     std::string host;
-    std::string port;
+    size_t port;
     std::vector<std::string> names;
     std::vector<std::string> error_pages;
     std::vector<location> locations;
