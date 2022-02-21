@@ -6,7 +6,7 @@
 /*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:52 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/02/21 13:25:02 by wben-sai         ###   ########.fr       */
+/*   Updated: 2022/02/21 16:26:03 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,19 +74,14 @@ class sock_server
         fd_set FDs_readability, FDs_writability;
         fd_set FDs_readability_copy, FDs_writability_copy;
         
-        std::map<int , std::string> FD_MAP;
+        std::map<int, SRR> M_FSRR; 
         
-        std::map<std::pair<int, std::string>, std::pair<std::string, std::string> > FSRR;
-        
-        std::map<int, SRR> M_FSRR;
-        std::vector<int> list_socket_server;
-        
-        void _create_socket();
-        void _bind(size_t port, std::string host);
-        void _listen();
+        int  _create_socket(server srv);
+        void _bind(int fd_sock ,size_t port, std::string host);
+        void _listen(int fd_sock);
         int  _select();
-        void _accept();
-        void _recv(int FDs);
+        void _accept(int fd_sock, server srv);
+        void _recv(int connectionServerSockFD);
         void ManagementFDs();
     public:
         sock_server(std::vector<server> servers);
