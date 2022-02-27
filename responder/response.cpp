@@ -1,6 +1,6 @@
 #include "./response.hpp"
 
-Response::Response(std::string path) : _inFile(path, std::ios::out|std::ios::binary), _readLen(0), _fileSize(0), _headSent(false)
+RSP::Response::Response(std::string path, headersType headers) : _inFile(path, std::ios::out|std::ios::binary), _headers(headers), _readLen(0), _fileSize(0), _headSent(false)
 {
     if (this->_inFile.is_open())
     {
@@ -11,12 +11,26 @@ Response::Response(std::string path) : _inFile(path, std::ios::out|std::ios::bin
     std::cout << this->_fileSize << std::endl;
 }
 
-Response::~Response()
+RSP::Response::Response(Response const & r)
+{
+    (*this) = r;
+}
+
+RSP::Response& RSP::Response::operator=(RSP::Response const & r)
+{
+    this->_headers = r._headers;
+    this->_readLen = r._readLen;
+    this->_headSent = r._headSent;
+    this->_fileSize = r._fileSize;
+    return (*this);
+}
+
+RSP::Response::~Response()
 {
     this->_inFile.close();
 }
 
-std::pair<bool, std::string> Response::Read(size_t _bufferSize)
+std::pair<bool, std::string> RSP::Response::Read(size_t _bufferSize)
 {
     if (this->_headSent)
     {
@@ -38,7 +52,7 @@ std::pair<bool, std::string> Response::Read(size_t _bufferSize)
     }
 }
 
-std::string Response::_getHeaders(void)
+std::string RSP::Response::_getHeaders(void)
 {
     return ("HTTP/1.1 200 OK\r\n");
 }

@@ -7,6 +7,9 @@
 #include <unistd.h>
 int main()
 {
+    std::map<std::string, std::string> statusCode;
+
+
     std::map<std::string, std::string> requestData;
 
     requestData.insert(std::make_pair("Error", "300"));
@@ -64,17 +67,17 @@ int main()
     srv1.locations.push_back(loc2);
     servers.push_back(srv1);
 
-    Responder r(servers[0]);
+    // RSP::Responder r(servers[0]);
 
-    std::pair<bool, std::string> res;
-    Response resp(r.Response(requestData));
-    while (true)
-    {
-        res = resp.Read(1);
-        std::cout << res.second;
-        if (res.first)
-            break;
-    }
+    // RSP::Response resp = r.Respond(requestData);
+    // std::pair<bool, std::string> res;
+    // while (true)
+    // {
+    //     res = resp.Read(1);
+    //     std::cout << res.second;
+    //     if (res.first)
+    //         break;
+    // }
 
     return (0);
 }

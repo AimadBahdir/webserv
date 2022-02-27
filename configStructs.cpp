@@ -24,3 +24,13 @@ struct server
     std::vector<location> locations;
     int clientMaxBodySize;  
 };
+
+struct request
+{
+    std::string methode;
+    std::string path;
+    std::string queries;
+    std::string version;
+    std::map<std::string, std::string> headers;
+    std::string bodyFile;
+};
