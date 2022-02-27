@@ -54,6 +54,77 @@ std::string RSP::Responder::GetErrorPage()
     return ("Res");
 }
 
+std::string RSP::Responder::GetError(std::string errorCode)
+{
+    std::map<std::string, std::string> errorsList;
+
+    errorsList["100"] = "Continue";
+    errorsList["101"] = "Switching protocols";
+    errorsList["102"] = "Processing";
+    errorsList["103"] = "Early Hints";
+    errorsList["200"] = "OK";
+    errorsList["201"] = "Created";
+    errorsList["202"] = "Accepted";
+    errorsList["203"] = "Non-Authoritative Information";
+    errorsList["204"] = "No Content";
+    errorsList["205"] = "Reset Content";
+    errorsList["206"] = "Partial Content";
+    errorsList["207"] = "Multi-Status";
+    errorsList["208"] = "Already Reported";
+    errorsList["226"] = "IM Used";
+    errorsList["300"] = "Multiple Choices";
+    errorsList["301"] = "Moved Permanently";
+    errorsList["302"] = "Found (Previously \"Moved Temporarily\")";
+    errorsList["303"] = "See Other";
+    errorsList["304"] = "Not Modified";
+    errorsList["305"] = "Use Proxy";
+    errorsList["306"] = "Switch Proxy";
+    errorsList["307"] = "Temporary Redirect";
+    errorsList["308"] = "Permanent Redirect";
+    errorsList["400"] = "Bad Request";
+    errorsList["401"] = "Unauthorized";
+    errorsList["402"] = "Payment Required";
+    errorsList["403"] = "Forbidden";
+    errorsList["404"] = "Not Found";
+    errorsList["405"] = "Method Not Allowed";
+    errorsList["406"] = "Not Acceptable";
+    errorsList["407"] = "Proxy Authentication Required";
+    errorsList["408"] = "Request Timeout";
+    errorsList["409"] = "Conflict";
+    errorsList["410"] = "Gone";
+    errorsList["411"] = "Length Required";
+    errorsList["412"] = "Precondition Failed";
+    errorsList["413"] = "Payload Too Large";
+    errorsList["414"] = "URI Too Long";
+    errorsList["415"] = "Unsupported Media Type";
+    errorsList["416"] = "Range Not Satisfiable";
+    errorsList["417"] = "Expectation Failed";
+    errorsList["418"] = "I'm a Teapot";
+    errorsList["421"] = "Misdirected Request";
+    errorsList["422"] = "Unprocessable Entity";
+    errorsList["423"] = "Locked";
+    errorsList["424"] = "Failed Dependency";
+    errorsList["425"] = "Too Early";
+    errorsList["426"] = "Upgrade Required";
+    errorsList["428"] = "Precondition Required";
+    errorsList["429"] = "Too Many Requests";
+    errorsList["431"] = "Request Header Fields Too Large";
+    errorsList["451"] = "Unavailable For Legal Reasons";
+    errorsList["500"] = "Internal Server Error";
+    errorsList["501"] = "Not Implemented";
+    errorsList["502"] = "Bad Gateway";
+    errorsList["503"] = "Service Unavailable";
+    errorsList["504"] = "Gateway Timeout";
+    errorsList["505"] = "HTTP Version Not Supported";
+    errorsList["506"] = "Variant Also Negotiates";
+    errorsList["507"] = "Insufficient Storage";
+    errorsList["508"] = "Loop Detected";
+    errorsList["510"] = "Not Extended";
+    errorsList["511"] = "Network Authentication Required";
+
+    return (errorsList[errorCode]);
+}
+
 std::string RSP::Responder::GenerateErrorPage(std::string errorMessage)
 {
     return (std::string("<html><head><title>"+errorMessage+"</title></head><body><center><h1>"+errorMessage+"</h1></center><hr><center>webserv/1.0.0</center></body></html>"));

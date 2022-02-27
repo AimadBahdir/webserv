@@ -23,5 +23,6 @@ namespace RSP {
             std::string GetErrorPage();
             std::string GetMimeType(std::string path);
             std::string GenerateErrorPage(std::string errorMessage);
+            std::string GetError(std::string errorCode);
     };
 }
