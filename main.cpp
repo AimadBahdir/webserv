@@ -5,34 +5,30 @@
 #include "./responder/response.hpp"
 
 #include <unistd.h>
+
+size_t  cmpath(std::string path, std::string cmval)
+{
+    size_t res = 0;
+    size_t i = 0;
+
+    for (; i < path.length(); i++)
+    {
+        if (path[i] != cmval[i])
+            return (res * (cmval[i] == '\0'));
+        res += (path[i] == cmval[i] && cmval[i] == '/');
+    }
+    return (res * (cmval[i] == '\0'));
+}
+
+
+//>> /home/
+//         |
+//>> /home/blog
+     
 int main()
 {
     std::map<std::string, std::string> statusCode;
 
-
-    std::map<std::string, std::string> requestData;
-
-    requestData.insert(std::make_pair("Error", "300"));
-    requestData.insert(std::make_pair("Methode", "GET"));
-    requestData.insert(std::make_pair("URI", "/Users/abahdir/Desktop/webserv/Makefile"));
-    requestData.insert(std::make_pair("Version", "HTTP/3"));
-    requestData.insert(std::make_pair("Queries", "requestData"));
-    ////////////////
-    requestData.insert(std::make_pair("Host", "127.0.0.1"));
-    requestData.insert(std::make_pair("Port", "8000"));
-    requestData.insert(std::make_pair("Connection", "keep-alive"));
-    requestData.insert(std::make_pair("Cache-Control", "max-age=0"));
-    requestData.insert(std::make_pair("Upgrade-Insecure-Requests", "1"));
-    requestData.insert(std::make_pair("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.114 Safari/537.36"));
-    requestData.insert(std::make_pair("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"));
-    requestData.insert(std::make_pair("Sec-Fetch-Site", "cross-site"));
-    requestData.insert(std::make_pair("Sec-Fetch-Mode", "navigate"));
-    requestData.insert(std::make_pair("Sec-Fetch-User", "?1"));
-    requestData.insert(std::make_pair("Sec-Fetch-Dest", "document"));
-    requestData.insert(std::make_pair("Accept-Encoding", "gzip, deflate, br"));
-    requestData.insert(std::make_pair("Accept-Language", "en-US,en;q=0.9"));
-    ///////////////
-    requestData.insert(std::make_pair("body", "/body"));
 
     std::vector<server> servers;
 
@@ -67,7 +63,49 @@ int main()
     srv1.locations.push_back(loc2);
     servers.push_back(srv1);
 
-    // RSP::Responder r(servers[0]);
+    std::map<std::string, std::string> headers;
+
+    headers["Host"] = "127.0.0.1";
+    headers["Port"] = "8000";
+    headers["Connection"] = "keep-alive";
+    headers["Cache-Control"] = "max-age=0";
+    headers["Upgrade-Insecure-Requests"] = "1";
+    headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML] = like Gecko) Chrome/89.0.4389.114 Safari/537.36";
+    headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9";
+    headers["Sec-Fetch-Site"] = "cross-site";
+    headers["Sec-Fetch-Mode"] = "navigate";
+    headers["Sec-Fetch-User"] = "?1";
+    headers["Sec-Fetch-Dest"] = "document";
+    headers["Accept-Encoding"] = "gzip, deflate, br";
+    headers["Accept-Language"] = "en-US,en;q=0.9";
+
+    request req;
+    req.error = "200";
+    req.serv = servers[0];
+    req.methode = "GET";
+    req.path = "/home";
+    req.queries = "";
+    req.version = "HTTP/1.1";
+    req.headers = headers;
+    req.bodyFile = "";
+
+    Responder r(req);
+
+    std::vector<std::string> vec;
+
+    vec.push_back("/videos/");
+    vec.push_back("/articles/");
+    vec.push_back("/");
+    vec.push_back("/home/bloges/");
+    vec.push_back("/home/blogd/");
+    vec.push_back("/home/blog/");
+    vec.push_back("/articles/news/");
+    vec.push_back("/home/");
+    vec.push_back("/articles/news/trending/");
+
+    std::string path = "/home/blog/";
+    for (size_t i = 0; i < vec.size(); i++)
+        std::cout << cmpath(path, vec[i]) << std::endl;
 
     // RSP::Response resp = r.Respond(requestData);
     // std::pair<bool, std::string> res;

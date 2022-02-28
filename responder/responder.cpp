@@ -1,136 +1,144 @@
 #include "./responder.hpp"
 
-RSP::Responder::Responder(server srv) : _server(srv) {}
+Responder::Responder(request req) : _req(req)
+{
+    // if (req.error.compare("200") == 0)
+    // {
+    //     for (std::vector<location>::iterator it; it != req.serv.locations.end(); it++)
+    //     {
+    //         if (it->cgi_path != "")
+    //         {
 
-RSP::Responder::Responder(RSP::Responder const & r)
+    //         }
+    //         else
+    //         {
+
+    //         }
+    //     }
+    // }
+}
+
+Responder::Responder(Responder const & r)
 {
     (*this) = r;
 }
 
-RSP::Responder& RSP::Responder::operator=(RSP::Responder const & r)
+Responder& Responder::operator=(Responder const & r)
 {
-    this->_server = r._server;
+    this->_req = r._req;
     return (*this);
 }
 
-RSP::Responder::~Responder() {}
+Responder::~Responder() {}
 
-RSP::Response RSP::Responder::Respond(request_map request)
-{
-    RSP::Response::headersType headers;
-    headers.insert(std::make_pair("Status", "200"));
-    // if (request["Methode"] == "GET")
-        
-    return (RSP::Response(request["URI"], headers));
-}
 
-std::string RSP::Responder::CGI_Response() 
+std::string Responder::CGI_Response() 
 {
     return ("Res");
 }
 
-std::string RSP::Responder::GET_Methode() 
+std::string Responder::GET_Methode() 
 {
     return ("Res");
 }
 
-std::string RSP::Responder::POST_Methode() 
+std::string Responder::POST_Methode() 
 {
     return ("Res");
 }
 
-std::string RSP::Responder::DELTE_Methode() 
+std::string Responder::DELTE_Methode() 
 {
     return ("Res");
 }
 
-std::string RSP::Responder::UploadFile() 
+std::string Responder::UploadFile() 
 {
     return ("Res");
 }
 
-std::string RSP::Responder::GetErrorPage() 
+std::string Responder::GetErrorPage() 
 {
     return ("Res");
 }
 
-std::string RSP::Responder::GetError(std::string errorCode)
+std::string Responder::GetError(std::string errorCode)
 {
-    std::map<std::string, std::string> errorsList;
+    std::map<std::string, std::string> statusCodes;
 
-    errorsList["100"] = "Continue";
-    errorsList["101"] = "Switching protocols";
-    errorsList["102"] = "Processing";
-    errorsList["103"] = "Early Hints";
-    errorsList["200"] = "OK";
-    errorsList["201"] = "Created";
-    errorsList["202"] = "Accepted";
-    errorsList["203"] = "Non-Authoritative Information";
-    errorsList["204"] = "No Content";
-    errorsList["205"] = "Reset Content";
-    errorsList["206"] = "Partial Content";
-    errorsList["207"] = "Multi-Status";
-    errorsList["208"] = "Already Reported";
-    errorsList["226"] = "IM Used";
-    errorsList["300"] = "Multiple Choices";
-    errorsList["301"] = "Moved Permanently";
-    errorsList["302"] = "Found (Previously \"Moved Temporarily\")";
-    errorsList["303"] = "See Other";
-    errorsList["304"] = "Not Modified";
-    errorsList["305"] = "Use Proxy";
-    errorsList["306"] = "Switch Proxy";
-    errorsList["307"] = "Temporary Redirect";
-    errorsList["308"] = "Permanent Redirect";
-    errorsList["400"] = "Bad Request";
-    errorsList["401"] = "Unauthorized";
-    errorsList["402"] = "Payment Required";
-    errorsList["403"] = "Forbidden";
-    errorsList["404"] = "Not Found";
-    errorsList["405"] = "Method Not Allowed";
-    errorsList["406"] = "Not Acceptable";
-    errorsList["407"] = "Proxy Authentication Required";
-    errorsList["408"] = "Request Timeout";
-    errorsList["409"] = "Conflict";
-    errorsList["410"] = "Gone";
-    errorsList["411"] = "Length Required";
-    errorsList["412"] = "Precondition Failed";
-    errorsList["413"] = "Payload Too Large";
-    errorsList["414"] = "URI Too Long";
-    errorsList["415"] = "Unsupported Media Type";
-    errorsList["416"] = "Range Not Satisfiable";
-    errorsList["417"] = "Expectation Failed";
-    errorsList["418"] = "I'm a Teapot";
-    errorsList["421"] = "Misdirected Request";
-    errorsList["422"] = "Unprocessable Entity";
-    errorsList["423"] = "Locked";
-    errorsList["424"] = "Failed Dependency";
-    errorsList["425"] = "Too Early";
-    errorsList["426"] = "Upgrade Required";
-    errorsList["428"] = "Precondition Required";
-    errorsList["429"] = "Too Many Requests";
-    errorsList["431"] = "Request Header Fields Too Large";
-    errorsList["451"] = "Unavailable For Legal Reasons";
-    errorsList["500"] = "Internal Server Error";
-    errorsList["501"] = "Not Implemented";
-    errorsList["502"] = "Bad Gateway";
-    errorsList["503"] = "Service Unavailable";
-    errorsList["504"] = "Gateway Timeout";
-    errorsList["505"] = "HTTP Version Not Supported";
-    errorsList["506"] = "Variant Also Negotiates";
-    errorsList["507"] = "Insufficient Storage";
-    errorsList["508"] = "Loop Detected";
-    errorsList["510"] = "Not Extended";
-    errorsList["511"] = "Network Authentication Required";
+    statusCodes["100"] = "Continue";
+    statusCodes["101"] = "Switching protocols";
+    statusCodes["102"] = "Processing";
+    statusCodes["103"] = "Early Hints";
+    statusCodes["200"] = "OK";
+    statusCodes["201"] = "Created";
+    statusCodes["202"] = "Accepted";
+    statusCodes["203"] = "Non-Authoritative Information";
+    statusCodes["204"] = "No Content";
+    statusCodes["205"] = "Reset Content";
+    statusCodes["206"] = "Partial Content";
+    statusCodes["207"] = "Multi-Status";
+    statusCodes["208"] = "Already Reported";
+    statusCodes["226"] = "IM Used";
+    statusCodes["300"] = "Multiple Choices";
+    statusCodes["301"] = "Moved Permanently";
+    statusCodes["302"] = "Found (Previously \"Moved Temporarily\")";
+    statusCodes["303"] = "See Other";
+    statusCodes["304"] = "Not Modified";
+    statusCodes["305"] = "Use Proxy";
+    statusCodes["306"] = "Switch Proxy";
+    statusCodes["307"] = "Temporary Redirect";
+    statusCodes["308"] = "Permanent Redirect";
+    statusCodes["400"] = "Bad Request";
+    statusCodes["401"] = "Unauthorized";
+    statusCodes["402"] = "Payment Required";
+    statusCodes["403"] = "Forbidden";
+    statusCodes["404"] = "Not Found";
+    statusCodes["405"] = "Method Not Allowed";
+    statusCodes["406"] = "Not Acceptable";
+    statusCodes["407"] = "Proxy Authentication Required";
+    statusCodes["408"] = "Request Timeout";
+    statusCodes["409"] = "Conflict";
+    statusCodes["410"] = "Gone";
+    statusCodes["411"] = "Length Required";
+    statusCodes["412"] = "Precondition Failed";
+    statusCodes["413"] = "Payload Too Large";
+    statusCodes["414"] = "URI Too Long";
+    statusCodes["415"] = "Unsupported Media Type";
+    statusCodes["416"] = "Range Not Satisfiable";
+    statusCodes["417"] = "Expectation Failed";
+    statusCodes["418"] = "I'm a Teapot";
+    statusCodes["421"] = "Misdirected Request";
+    statusCodes["422"] = "Unprocessable Entity";
+    statusCodes["423"] = "Locked";
+    statusCodes["424"] = "Failed Dependency";
+    statusCodes["425"] = "Too Early";
+    statusCodes["426"] = "Upgrade Required";
+    statusCodes["428"] = "Precondition Required";
+    statusCodes["429"] = "Too Many Requests";
+    statusCodes["431"] = "Request Header Fields Too Large";
+    statusCodes["451"] = "Unavailable For Legal Reasons";
+    statusCodes["500"] = "Internal Server Error";
+    statusCodes["501"] = "Not Implemented";
+    statusCodes["502"] = "Bad Gateway";
+    statusCodes["503"] = "Service Unavailable";
+    statusCodes["504"] = "Gateway Timeout";
+    statusCodes["505"] = "HTTP Version Not Supported";
+    statusCodes["506"] = "Variant Also Negotiates";
+    statusCodes["507"] = "Insufficient Storage";
+    statusCodes["508"] = "Loop Detected";
+    statusCodes["510"] = "Not Extended";
+    statusCodes["511"] = "Network Authentication Required";
 
-    return (errorsList[errorCode]);
+    return (statusCodes[errorCode]);
 }
 
-std::string RSP::Responder::GenerateErrorPage(std::string errorMessage)
+std::string Responder::GenerateErrorPage(std::string errorMessage)
 {
     return (std::string("<html><head><title>"+errorMessage+"</title></head><body><center><h1>"+errorMessage+"</h1></center><hr><center>webserv/1.0.0</center></body></html>"));
 }
 
-std::string RSP::Responder::GetMimeType(std::string path)
+std::string Responder::GetMimeType(std::string path)
 {
     std::map<std::string, std::string> mimeTypes;
 

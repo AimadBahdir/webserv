@@ -27,6 +27,8 @@ struct server
 
 struct request
 {
+    std::string error;
+    server      serv;
     std::string methode;
     std::string path;
     std::string queries;
