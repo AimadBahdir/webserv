@@ -6,19 +6,7 @@
 
 #include <unistd.h>
 
-size_t  cmpath(std::string path, std::string cmval)
-{
-    size_t res = 0;
-    size_t i = 0;
 
-    for (; i < path.length(); i++)
-    {
-        if (path[i] != cmval[i])
-            return (res * (cmval[i] == '\0'));
-        res += (path[i] == cmval[i] && cmval[i] == '/');
-    }
-    return (res * (cmval[i] == '\0'));
-}
 
 
 //>> /home/
@@ -43,6 +31,14 @@ int main()
     srv1.error_pages.push_back("502");
     srv1.error_pages.push_back("./50x.html");
 
+    location loc0;
+    loc0.location_path = "/";
+    loc0.auto_index = false;
+    loc0.cgi_path = "/Users/etc/cgi";
+    loc0.index.push_back("index.html");
+    loc0.index.push_back("index.htm");
+    loc0.root_path = "/Users/home/";
+
     location loc1;
     loc1.location_path = "/home";
     loc1.auto_index = false;
@@ -59,8 +55,18 @@ int main()
     loc2.index.push_back("index.htm");
     loc2.root_path = "/Users/about/";
 
+    location loc3;
+    loc3.location_path = "/cgi";
+    loc3.auto_index = true;
+    loc3.cgi_path = "/Users/etc/cgi";
+    loc3.index.push_back("index.html");
+    loc3.index.push_back("index.htm");
+    loc3.root_path = "/Users/about/";
+
+    srv1.locations.push_back(loc0);
     srv1.locations.push_back(loc1);
     srv1.locations.push_back(loc2);
+    srv1.locations.push_back(loc3);
     servers.push_back(srv1);
 
     std::map<std::string, std::string> headers;
@@ -83,29 +89,13 @@ int main()
     req.error = "200";
     req.serv = servers[0];
     req.methode = "GET";
-    req.path = "/home";
+    req.path = "/home/index.html";
     req.queries = "";
     req.version = "HTTP/1.1";
     req.headers = headers;
     req.bodyFile = "";
 
     Responder r(req);
-
-    std::vector<std::string> vec;
-
-    vec.push_back("/videos/");
-    vec.push_back("/articles/");
-    vec.push_back("/");
-    vec.push_back("/home/bloges/");
-    vec.push_back("/home/blogd/");
-    vec.push_back("/home/blog/");
-    vec.push_back("/articles/news/");
-    vec.push_back("/home/");
-    vec.push_back("/articles/news/trending/");
-
-    std::string path = "/home/blog/";
-    for (size_t i = 0; i < vec.size(); i++)
-        std::cout << cmpath(path, vec[i]) << std::endl;
 
     // RSP::Response resp = r.Respond(requestData);
     // std::pair<bool, std::string> res;

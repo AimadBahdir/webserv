@@ -21,4 +21,6 @@ class Responder
         std::string GetMimeType(std::string path);
         std::string GenerateErrorPage(std::string errorMessage);
         std::string GetError(std::string errorCode);
+        size_t      _cmpath(std::string path, std::string cmval);
+        location    _getLocation(std::string _reqPath, std::vector<location> _locations);
 };

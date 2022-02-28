@@ -2,20 +2,11 @@
 
 Responder::Responder(request req) : _req(req)
 {
-    // if (req.error.compare("200") == 0)
-    // {
-    //     for (std::vector<location>::iterator it; it != req.serv.locations.end(); it++)
-    //     {
-    //         if (it->cgi_path != "")
-    //         {
-
-    //         }
-    //         else
-    //         {
-
-    //         }
-    //     }
-    // }
+    if (req.error.compare("200") == 0)
+    {
+        location l = this->_getLocation(req.path, req.serv.locations);
+        std::cout << l.location_path << std::endl;
+    }
 }
 
 Responder::Responder(Responder const & r)
@@ -60,6 +51,41 @@ std::string Responder::UploadFile()
 std::string Responder::GetErrorPage() 
 {
     return ("Res");
+}
+
+size_t  Responder::_cmpath(std::string path, std::string cmval)
+{
+    size_t res = 0;
+    size_t i = 0;
+
+    for (; i < path.length(); i++)
+    {
+        if (path[i] != cmval[i])
+            return (res * (cmval[i] == '\0'));
+        res += (path[i] == cmval[i] && cmval[i] == '/');
+    }
+    return (res * (cmval[i] == '\0'));
+}
+
+location Responder::_getLocation(std::string _reqPath, std::vector<location> _locations)
+{
+    size_t _bestPath = 0;
+    location _loc;
+    _loc.location_path = "";
+    _loc.auto_index = true;
+    _loc.cgi_path = "";
+    _loc.index.push_back("index.html");
+    _loc.root_path = "/goinfre/abahdir/webserv";
+    _loc.upload_path = "default";
+    _loc.redirection = std::make_pair(1, "/");
+
+    for (size_t i = 0; i < _locations.size(); i++)
+    {
+        size_t _cmp = this->_cmpath(_reqPath, _locations[i].location_path);
+        _loc = (_cmp > _bestPath) ?  _locations[i] : _loc;
+        _bestPath = (_cmp > _bestPath) ? _cmp : _bestPath;
+    }
+    return (_loc);
 }
 
 std::string Responder::GetError(std::string errorCode)
