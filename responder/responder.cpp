@@ -5,6 +5,7 @@ Responder::Responder(request req) : _req(req)
     if (req.error.compare("200") == 0)
     {
         location l = this->_getLocation(req.path, req.serv.locations);
+
         std::cout << l.location_path << std::endl;
     }
 }
@@ -68,11 +69,13 @@ size_t  Responder::_cmpath(std::string path, std::string cmval)
     size_t res = 0;
     size_t i = 0;
 
-    for (; i < path.length(); i++)
+    while(i < path.length())
     {
         if (path[i] != cmval[i])
             return (res * (cmval[i] == '\0'));
         res += (path[i] == cmval[i] && cmval[i] == '/');
+        
+        i++;
     }
     return (res * (cmval[i] == '\0'));
 }

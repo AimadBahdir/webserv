@@ -24,37 +24,38 @@ int main()
     srv1.error_pages.push_back("502");
     srv1.error_pages.push_back("./50x.html");
 
-    location loc0;
+    location loc0, loc1, loc2, loc3;
     loc0.location_path = "/";
     loc0.auto_index = false;
-    loc0.cgi_path = "/Users/etc/cgi";
+    loc0.cgi_path = "/Users/abahdir/goinfre/.brew/bin/php-cgi";
     loc0.index.push_back("index.html");
+    loc0.index.push_back("index.php");
     loc0.index.push_back("index.htm");
-    loc0.root_path = "/Users/home/";
+    loc0.root_path = "/goinfre/abahdir/nginxTest/";
 
-    location loc1;
-    loc1.location_path = "/home";
+    loc1.location_path = "/";
     loc1.auto_index = false;
-    loc1.cgi_path = "/Users/etc/cgi";
+    loc1.cgi_path = "/Users/abahdir/goinfre/.brew/bin/php-cgi";
     loc1.index.push_back("index.html");
+    loc1.index.push_back("index.php");
     loc1.index.push_back("index.htm");
-    loc1.root_path = "/Users/home/";
+    loc1.root_path = "/goinfre/abahdir/nginxTest/";
 
-    location loc2;
-    loc2.location_path = "/about";
-    loc2.auto_index = true;
-    loc2.cgi_path = "/Users/etc/cgi";
+    loc2.location_path = "/";
+    loc2.auto_index = false;
+    loc2.cgi_path = "/Users/abahdir/goinfre/.brew/bin/php-cgi";
     loc2.index.push_back("index.html");
+    loc2.index.push_back("index.php");
     loc2.index.push_back("index.htm");
-    loc2.root_path = "/Users/about/";
+    loc2.root_path = "/goinfre/abahdir/nginxTest/";
 
-    location loc3;
-    loc3.location_path = "/cgi";
-    loc3.auto_index = true;
-    loc3.cgi_path = "/Users/etc/cgi";
+    loc3.location_path = ".php";
+    loc3.auto_index = false;
+    loc3.cgi_path = "/Users/abahdir/goinfre/.brew/bin/php-cgi";
     loc3.index.push_back("index.html");
+    loc3.index.push_back("index.php");
     loc3.index.push_back("index.htm");
-    loc3.root_path = "/Users/about/";
+    loc3.root_path = "/goinfre/abahdir/nginxTest/";
 
     srv1.locations.push_back(loc0);
     srv1.locations.push_back(loc1);
