@@ -1,12 +1,11 @@
 #include "./responder.hpp"
 
-Responder::Responder(request req) : _req(req)
+Responder::Responder(request req) : _request(req)
 {
     if (req.error.compare("200") == 0)
     {
-        location l = this->_getLocation(req.path, req.serv.locations);
-
-        std::cout << l.location_path << std::endl;
+        this->_location = this->_getLocation(req.path, req.serv.locations);
+        std::cout << _location.location_path << std::endl;
     }
 }
 
@@ -17,7 +16,8 @@ Responder::Responder(Responder const & r)
 
 Responder& Responder::operator=(Responder const & r)
 {
-    this->_req = r._req;
+    this->_request = r._request;
+    this->_location = r._location;
     return (*this);
 }
 
@@ -53,7 +53,7 @@ std::string Responder::_indexOfPage(std::string _root, std::string _dir)
 {
     DIR *dp;
     struct dirent *dirp;
-    std::string _html = "<html><head><title>Index of "+_dir+"</title></head><body><h1>Index of "+_dir+"</h1><hr><pre>";
+    std::string _html = "<html><head><title>Index of "+_dir+"</title><style>* * {background-color: #123;color: #FFF;}</style></head><body><h1>Index of "+_dir+"</h1><hr><pre>";
     if((dp  = opendir(std::string(_root+""+_dir).c_str())) != NULL)
     {
         while ((dirp = readdir(dp)) != NULL)
@@ -68,13 +68,16 @@ size_t  Responder::_cmpath(std::string path, std::string cmval)
 {
     size_t res = 0;
     size_t i = 0;
-
+    size_t _ext = path.find_last_of('.');
+    if (_ext != std::string::npos && cmval.compare(path.substr(_ext)) == 0)
+        return (std::string::npos);
+    else if (cmval.compare(path) == 0)
+        return (std::string::npos - 1);
     while(i < path.length())
     {
         if (path[i] != cmval[i])
             return (res * (cmval[i] == '\0'));
         res += (path[i] == cmval[i] && cmval[i] == '/');
-        
         i++;
     }
     return (res * (cmval[i] == '\0'));
@@ -174,7 +177,7 @@ std::string Responder::_getError(std::string errorCode)
 
 std::string Responder::_generateErrorPage(std::string errorMessage)
 {
-    return (std::string("<html><head><title>"+errorMessage+"</title></head><body><center><h1>"+errorMessage+"</h1></center><hr><center>webserv/1.0.0</center></body></html>"));
+    return (std::string("<html><head><title>"+errorMessage+"</title><style>* * {background-color: #123;color: #FFF;}</style></head><body><center><h1>"+errorMessage+"</h1></center><hr><center>webserv/1.0.0</center></body></html>"));
 }
 
 std::string Responder::_getMimeType(std::string path)

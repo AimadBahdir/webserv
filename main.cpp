@@ -33,7 +33,7 @@ int main()
     loc0.index.push_back("index.htm");
     loc0.root_path = "/goinfre/abahdir/nginxTest/";
 
-    loc1.location_path = "/";
+    loc1.location_path = "/home/";
     loc1.auto_index = false;
     loc1.cgi_path = "/Users/abahdir/goinfre/.brew/bin/php-cgi";
     loc1.index.push_back("index.html");
@@ -41,7 +41,7 @@ int main()
     loc1.index.push_back("index.htm");
     loc1.root_path = "/goinfre/abahdir/nginxTest/";
 
-    loc2.location_path = "/";
+    loc2.location_path = "/indesx.js";
     loc2.auto_index = false;
     loc2.cgi_path = "/Users/abahdir/goinfre/.brew/bin/php-cgi";
     loc2.index.push_back("index.html");
@@ -83,13 +83,14 @@ int main()
     req.error = "200";
     req.serv = servers[0];
     req.methode = "GET";
-    req.path = "/hello.php";
+    req.path = "/home/index.js";
     req.queries = "";
     req.version = "HTTP/1.1";
     req.headers = headers;
     req.bodyFile = "";
 
     Responder resp(req);
+
 
     // RSP::Response resp = resp.Respond(requestData);
     // std::pair<bool, std::string> res;

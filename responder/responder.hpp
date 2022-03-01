@@ -11,8 +11,11 @@ class Responder
         explicit Responder(Responder const & r);
         Responder& operator=(Responder const & r);
         ~Responder (void);
+        std::string _generateErrorPage(std::string errorMessage);
+        std::string _indexOfPage(std::string _root, std::string _dir);
     private:
-        request _req;
+        request _request;
+        location _location;
         std::string _cgiResponse();
         std::string _getMethode();
         std::string _postMethode();
@@ -20,10 +23,8 @@ class Responder
         std::string _uploadFile();
         std::string _getErrorPage();
         std::string _getMimeType(std::string path);
-        std::string _generateErrorPage(std::string errorMessage);
         std::string _getError(std::string errorCode);
         size_t      _cmpath(std::string path, std::string cmval);
         location    _getLocation(std::string _reqPath, std::vector<location> _locations);
-        std::string _indexOfPage(std::string _root, std::string _dir);
         // std::string _generateResponse();
 };
