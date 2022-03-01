@@ -2,6 +2,7 @@
 #pragma once
 #include "../configStructs.cpp"
 #include <algorithm>
+#include <dirent.h>
 
 class Responder
 {
@@ -12,15 +13,17 @@ class Responder
         ~Responder (void);
     private:
         request _req;
-        std::string CGI_Response();
-        std::string GET_Methode();
-        std::string POST_Methode();
-        std::string DELTE_Methode();
-        std::string UploadFile();
-        std::string GetErrorPage();
-        std::string GetMimeType(std::string path);
-        std::string GenerateErrorPage(std::string errorMessage);
-        std::string GetError(std::string errorCode);
+        std::string _cgiResponse();
+        std::string _getMethode();
+        std::string _postMethode();
+        std::string _deleteMethode();
+        std::string _uploadFile();
+        std::string _getErrorPage();
+        std::string _getMimeType(std::string path);
+        std::string _generateErrorPage(std::string errorMessage);
+        std::string _getError(std::string errorCode);
         size_t      _cmpath(std::string path, std::string cmval);
         location    _getLocation(std::string _reqPath, std::vector<location> _locations);
+        std::string _indexOfPage(std::string _root, std::string _dir);
+        // std::string _generateResponse();
 };

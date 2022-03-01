@@ -23,34 +23,44 @@ Responder& Responder::operator=(Responder const & r)
 Responder::~Responder() {}
 
 
-std::string Responder::CGI_Response() 
+std::string Responder::_cgiResponse() 
 {
     return ("Res");
 }
 
-std::string Responder::GET_Methode() 
+std::string Responder::_getMethode() 
 {
     return ("Res");
 }
 
-std::string Responder::POST_Methode() 
+std::string Responder::_postMethode() 
 {
     return ("Res");
 }
 
-std::string Responder::DELTE_Methode() 
+std::string Responder::_deleteMethode() 
 {
     return ("Res");
 }
 
-std::string Responder::UploadFile() 
+std::string Responder::_uploadFile() 
 {
     return ("Res");
 }
 
-std::string Responder::GetErrorPage() 
+std::string Responder::_indexOfPage(std::string _root, std::string _dir)
 {
-    return ("Res");
+    DIR *dp;
+    struct dirent *dirp;
+    std::string _html = "<html><head><title>Index of "+_dir+"</title></head><body><h1>Index of "+_dir+"</h1><hr><pre>";
+    if((dp  = opendir(std::string(_root+""+_dir).c_str())) != NULL)
+    {
+        while ((dirp = readdir(dp)) != NULL)
+            _html += "<a href='"+ std::string(dirp->d_name) +"/'>" + std::string(dirp->d_name) + "/</a>\n";
+        closedir(dp);
+    }
+    _html += "</pre><hr></body></html>";
+    return (_html);
 }
 
 size_t  Responder::_cmpath(std::string path, std::string cmval)
@@ -88,7 +98,7 @@ location Responder::_getLocation(std::string _reqPath, std::vector<location> _lo
     return (_loc);
 }
 
-std::string Responder::GetError(std::string errorCode)
+std::string Responder::_getError(std::string errorCode)
 {
     std::map<std::string, std::string> statusCodes;
 
@@ -159,12 +169,12 @@ std::string Responder::GetError(std::string errorCode)
     return (statusCodes[errorCode]);
 }
 
-std::string Responder::GenerateErrorPage(std::string errorMessage)
+std::string Responder::_generateErrorPage(std::string errorMessage)
 {
     return (std::string("<html><head><title>"+errorMessage+"</title></head><body><center><h1>"+errorMessage+"</h1></center><hr><center>webserv/1.0.0</center></body></html>"));
 }
 
-std::string Responder::GetMimeType(std::string path)
+std::string Responder::_getMimeType(std::string path)
 {
     std::map<std::string, std::string> mimeTypes;
 

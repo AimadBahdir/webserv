@@ -6,13 +6,6 @@
 
 #include <unistd.h>
 
-
-
-
-//>> /home/
-//         |
-//>> /home/blog
-     
 int main()
 {
     std::map<std::string, std::string> statusCode;
@@ -89,15 +82,15 @@ int main()
     req.error = "200";
     req.serv = servers[0];
     req.methode = "GET";
-    req.path = "/home/index.html";
+    req.path = "/hello.php";
     req.queries = "";
     req.version = "HTTP/1.1";
     req.headers = headers;
     req.bodyFile = "";
 
-    Responder r(req);
+    Responder resp(req);
 
-    // RSP::Response resp = r.Respond(requestData);
+    // RSP::Response resp = resp.Respond(requestData);
     // std::pair<bool, std::string> res;
     // while (true)
     // {
@@ -106,6 +99,6 @@ int main()
     //     if (res.first)
     //         break;
     // }
-
+    // std::cout << resp._indexOfPage("/goinfre/abahdir/nginxTest/", "/ok/") << std::endl;
     return (0);
 }
