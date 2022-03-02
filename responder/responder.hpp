@@ -3,6 +3,8 @@
 #include "../configStructs.cpp"
 #include <algorithm>
 #include <dirent.h>
+#include <sys/stat.h>
+#include <time.h>
 
 class Responder
 {
@@ -11,11 +13,12 @@ class Responder
         explicit Responder(Responder const & r);
         Responder& operator=(Responder const & r);
         ~Responder (void);
-        std::string _generateErrorPage(std::string errorMessage);
-        std::string _indexOfPage(std::string _root, std::string _dir);
+        std::string response(void);
     private:
         request _request;
         location _location;
+        std::string _generateErrorBody(std::string errorMessage);
+        std::string _indexOfPage(std::string _root, std::string _dir);
         std::string _cgiResponse();
         std::string _getMethode();
         std::string _postMethode();

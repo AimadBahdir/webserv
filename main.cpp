@@ -5,6 +5,7 @@
 #include "./responder/response.hpp"
 
 #include <unistd.h>
+// #include <csystem>
 
 int main()
 {
@@ -91,8 +92,12 @@ int main()
 
     Responder resp(req);
 
+    std::cout << resp.response();
 
-    // RSP::Response resp = resp.Respond(requestData);
+    // system("cp -r ./default ~/webservconfig/");
+    // system("rm -rf /tmp/webserv/*");
+    // system("mkdir /tmp/webserv");
+
     // std::pair<bool, std::string> res;
     // while (true)
     // {

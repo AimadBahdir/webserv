@@ -5,7 +5,7 @@ Responder::Responder(request req) : _request(req)
     if (req.error.compare("200") == 0)
     {
         this->_location = this->_getLocation(req.path, req.serv.locations);
-        std::cout << _location.location_path << std::endl;
+        
     }
 }
 
@@ -23,25 +23,37 @@ Responder& Responder::operator=(Responder const & r)
 
 Responder::~Responder() {}
 
+std::string Responder::response(void)
+{
+    if (this->_request.methode.compare("GET") == 0)
+        return (_getMethode());
+    else if (this->_request.methode.compare("POST") == 0)
+        return (_postMethode());
+    else if (this->_request.methode.compare("DELETE") == 0)
+        return (_postMethode());
+    
+    return ("RES");
+}
+
 
 std::string Responder::_cgiResponse() 
 {
-    return ("Res");
+    return ("CGI");
 }
 
 std::string Responder::_getMethode() 
 {
-    return ("Res");
+    return ("GET");
 }
 
 std::string Responder::_postMethode() 
 {
-    return ("Res");
+    return ("POST");
 }
 
 std::string Responder::_deleteMethode() 
 {
-    return ("Res");
+    return ("DELETE");
 }
 
 std::string Responder::_uploadFile() 
@@ -53,14 +65,37 @@ std::string Responder::_indexOfPage(std::string _root, std::string _dir)
 {
     DIR *dp;
     struct dirent *dirp;
-    std::string _html = "<html><head><title>Index of "+_dir+"</title><style>* * {background-color: #123;color: #FFF;}</style></head><body><h1>Index of "+_dir+"</h1><hr><pre>";
+    struct stat stats;
+    struct tm dt;
+    std::string _html = "<html><head><title>Index of "+_dir+"</title>";
+    _html += "<style>body{background-color:#123;color:#FFF;display:flex;justify-content:center;align-items:center;flex-direction:column;min-height:96vh;}";
+    _html += "pre {display:flex;justify-content:center;flex-direction:column;width:460px;}";
+    _html += "a {text-decoration:none;color:#FFF;overflow:hidden;text-overflow:ellipsis;}";
+    _html += ".data span {font-size:12px}";
+    _html += ".data {display:flex;justify-content:space-between;font-size:15px;background:#234;padding:.5rem;border-radius:.6rem;min-width:5rem;padding-left:2rem;margin:.2rem;}</style>";
+    _html += "</head><body><h1>Index of "+_dir+"</h1><pre>";
     if((dp  = opendir(std::string(_root+""+_dir).c_str())) != NULL)
     {
         while ((dirp = readdir(dp)) != NULL)
-            _html += "<a href='"+ std::string(dirp->d_name) +"/'>" + std::string(dirp->d_name) + "/</a>\n";
+        {
+            if (dirp->d_name[0] == '.' && dirp->d_name[1] != '.')
+                continue;
+            if (stat((_root+""+_dir+"/"+dirp->d_name).c_str(), &stats) == 0)
+            {
+                dt = *(gmtime(&stats.st_ctime));
+                if (std::string(dirp->d_name).compare("..") == 0)
+                    _html += "<a class='data' href='"+ std::string(dirp->d_name) +"'><< Back </a>\n";
+                else
+                {
+                    _html += "<div class='data'><a title='"+ std::string(dirp->d_name) +"' href='"+ std::string(dirp->d_name) +"'>" + std::string(dirp->d_name);
+                    _html += "</a><span>"+std::to_string(dt.tm_mday)+"/"+std::to_string(dt.tm_mon)+"/"+std::to_string(dt.tm_year + 1900)+" ";
+                    _html += std::to_string(dt.tm_hour)+":"+std::to_string(dt.tm_min)+"</span></div>\n";
+                }
+            }
+        }
         closedir(dp);
     }
-    _html += "</pre><hr></body></html>";
+    _html += "</pre><br/>webserv/1.0.0</body></html>";
     return (_html);
 }
 
@@ -175,125 +210,126 @@ std::string Responder::_getError(std::string errorCode)
     return (statusCodes[errorCode]);
 }
 
-std::string Responder::_generateErrorPage(std::string errorMessage)
+std::string Responder::_generateErrorBody(std::string errorCode)
 {
-    return (std::string("<html><head><title>"+errorMessage+"</title><style>* * {background-color: #123;color: #FFF;}</style></head><body><center><h1>"+errorMessage+"</h1></center><hr><center>webserv/1.0.0</center></body></html>"));
+    std::string _msg = _getError(errorCode);
+    return (std::string("<html><head><title>"+_msg+"</title><style>body{background-color:#123;color:#FFF;display:flex;justify-content:center;align-items:center;flex-direction:column;height:96vh;}h1{font-size:5rem;margin:.5rem;}</style></head><body><center><h1>"+errorCode+"</h1><h2>"+_msg+"</h2><hr/>webserv/1.0.0</center></body></html>"));
 }
 
 std::string Responder::_getMimeType(std::string path)
 {
     std::map<std::string, std::string> mimeTypes;
 
-    mimeTypes["html"] = "text/html";
-    mimeTypes["htm"] = "text/html";
-    mimeTypes["shtml"] = "text/html";
-    mimeTypes["css"] = "text/css";
-    mimeTypes["xml"] = "text/xml";
-    mimeTypes["gif"] = "image/gif";
-    mimeTypes["jpeg"] = "image/jpeg";
-    mimeTypes["jpg"] = "image/jpeg";
-    mimeTypes["js"] = "application/javascript";
-    mimeTypes["atom"] = "application/atom+xml";
-    mimeTypes["rss"] = "application/rss+xml";
-    mimeTypes["mml"] = "text/mathml";
-    mimeTypes["txt"] = "text/plain";
-    mimeTypes["jad"] = "text/vnd.sun.j2me.app-descriptor";
-    mimeTypes["wml"] = "text/vnd.wap.wml";
-    mimeTypes["htc"] = "text/x-component";
-    mimeTypes["avif"] = "image/avif";
-    mimeTypes["png"] = "image/png";
-    mimeTypes["svg"] = "image/svg+xml";
-    mimeTypes["svgz"] = "image/svg+xml";
-    mimeTypes["tif"] = "image/tiff";
-    mimeTypes["tiff"] = "image/tiff";
-    mimeTypes["wbmp"] = "image/vnd.wap.wbmp";
-    mimeTypes["webp"] = "image/webp";
-    mimeTypes["ico"] = "image/x-icon";
-    mimeTypes["jng"] = "image/x-jng";
-    mimeTypes["bmp"] = "image/x-ms-bmp";
-    mimeTypes["woff"] = "font/woff";
-    mimeTypes["woff2"] = "font/woff2";
-    mimeTypes["jar"] = "application/java-archive";
-    mimeTypes["war"] = "application/java-archive";
-    mimeTypes["ear"] = "application/java-archive";
-    mimeTypes["json"] = "application/json";
-    mimeTypes["hqx"] = "application/mac-binhex40";
-    mimeTypes["doc"] = "application/msword";
-    mimeTypes["pdf"] = "application/pdf";
-    mimeTypes["ps"] = "application/postscript";
-    mimeTypes["eps"] = "application/postscript";
-    mimeTypes["ai"] = "application/postscript";
-    mimeTypes["rtf"] = "application/rtf";
-    mimeTypes["m3u8"] = "application/vnd.apple.mpegurl";
-    mimeTypes["kml"] = "application/vnd.google-earth.kml+xml";
-    mimeTypes["kmz"] = "application/vnd.google-earth.kmz";
-    mimeTypes["xls"] = "application/vnd.ms-excel";
-    mimeTypes["eot"] = "application/vnd.ms-fontobject";
-    mimeTypes["ppt"] = "application/vnd.ms-powerpoint";
-    mimeTypes["odg"] = "application/vnd.oasis.opendocument.graphics";
-    mimeTypes["odp"] = "application/vnd.oasis.opendocument.presentation";
-    mimeTypes["ods"] = "application/vnd.oasis.opendocument.spreadsheet";
-    mimeTypes["odt"] = "application/vnd.oasis.opendocument.text";
-    mimeTypes["pptx"] = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
-    mimeTypes["xlsx"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-    mimeTypes["docx"] = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-    mimeTypes["wmlc"] = "application/vnd.wap.wmlc";
-    mimeTypes["wasm"] = "application/wasm";
-    mimeTypes["7z"] = "application/x-7z-compressed";
-    mimeTypes["cco"] = "application/x-cocoa";
-    mimeTypes["jardiff"] = "application/x-java-archive-diff";
-    mimeTypes["jnlp"] = "application/x-java-jnlp-file";
-    mimeTypes["run"] = "application/x-makeself";
-    mimeTypes["pl"] = "application/x-perl";
-    mimeTypes["pm"] = "application/x-perl";
-    mimeTypes["prc"] = "application/x-pilot";
-    mimeTypes["pdb"] = "application/x-pilot";
-    mimeTypes["rar"] = "application/x-rar-compressed";
-    mimeTypes["rpm"] = "application/x-redhat-package-manager";
-    mimeTypes["sea"] = "application/x-sea";
-    mimeTypes["swf"] = "application/x-shockwave-flash";
-    mimeTypes["sit"] = "application/x-stuffit";
-    mimeTypes["tcl"] = "application/x-tcl";
-    mimeTypes["tk"] = "application/x-tcl";
-    mimeTypes["der"] = "application/x-x509-ca-cert";
-    mimeTypes["pem"] = "application/x-x509-ca-cert";
-    mimeTypes["crt"] = "application/x-x509-ca-cert";
-    mimeTypes["xpi"] = "application/x-xpinstall";
-    mimeTypes["xhtml"] = "application/xhtml+xml";
-    mimeTypes["xspf"] = "application/xspf+xml";
-    mimeTypes["zip"] = "application/zip";
-    mimeTypes["bin"] = "application/octet-stream";
-    mimeTypes["exe"] = "application/octet-stream";
-    mimeTypes["dll"] = "application/octet-stream";
-    mimeTypes["deb"] = "application/octet-stream";
-    mimeTypes["dmg"] = "application/octet-stream";
-    mimeTypes["iso"] = "application/octet-stream";
-    mimeTypes["img"] = "application/octet-stream";
-    mimeTypes["msi"] = "application/octet-stream";
-    mimeTypes["msp"] = "application/octet-stream";
-    mimeTypes["msm"] = "application/octet-stream";
-    mimeTypes["mid"] = "audio/midi";
-    mimeTypes["midi"] = "audio/midi";
-    mimeTypes["kar"] = "audio/midi";
-    mimeTypes["mp3"] = "audio/mpeg";
-    mimeTypes["ogg"] = "audio/ogg";
-    mimeTypes["m4a"] = "audio/x-m4a";
-    mimeTypes["ra"] = "audio/x-realaudio";
-    mimeTypes["3gpp"] = "video/3gpp";
-    mimeTypes["3gp"] = "video/3gpp";
-    mimeTypes["ts"] = "video/mp2t";
-    mimeTypes["mp4"] = "video/mp4";
-    mimeTypes["mpeg"] = "video/mpeg";
-    mimeTypes["mpg"] = "video/mpeg";
-    mimeTypes["mov"] = "video/quicktime";
-    mimeTypes["webm"] = "video/webm";
-    mimeTypes["flv"] = "video/x-flv";
-    mimeTypes["m4v"] = "video/x-m4v";
-    mimeTypes["mng"] = "video/x-mng";
-    mimeTypes["asx"] = "video/x-ms-asf";
-    mimeTypes["asf"] = "video/x-ms-asf";
-    mimeTypes["wmv"] = "video/x-ms-wmv";
-    mimeTypes["avi"] = "video/x-msvideo";
+    mimeTypes["html"] ="text/html";
+    mimeTypes["htm"] ="text/html";
+    mimeTypes["shtml"] ="text/html";
+    mimeTypes["css"] ="text/css";
+    mimeTypes["xml"] ="text/xml";
+    mimeTypes["gif"] ="image/gif";
+    mimeTypes["jpeg"] ="image/jpeg";
+    mimeTypes["jpg"] ="image/jpeg";
+    mimeTypes["js"] ="application/javascript";
+    mimeTypes["atom"] ="application/atom+xml";
+    mimeTypes["rss"] ="application/rss+xml";
+    mimeTypes["mml"] ="text/mathml";
+    mimeTypes["txt"] ="text/plain";
+    mimeTypes["jad"] ="text/vnd.sun.j2me.app-descriptor";
+    mimeTypes["wml"] ="text/vnd.wap.wml";
+    mimeTypes["htc"] ="text/x-component";
+    mimeTypes["avif"] ="image/avif";
+    mimeTypes["png"] ="image/png";
+    mimeTypes["svg"] ="image/svg+xml";
+    mimeTypes["svgz"] ="image/svg+xml";
+    mimeTypes["tif"] ="image/tiff";
+    mimeTypes["tiff"] ="image/tiff";
+    mimeTypes["wbmp"] ="image/vnd.wap.wbmp";
+    mimeTypes["webp"] ="image/webp";
+    mimeTypes["ico"] ="image/x-icon";
+    mimeTypes["jng"] ="image/x-jng";
+    mimeTypes["bmp"] ="image/x-ms-bmp";
+    mimeTypes["woff"] ="font/woff";
+    mimeTypes["woff2"] ="font/woff2";
+    mimeTypes["jar"] ="application/java-archive";
+    mimeTypes["war"] ="application/java-archive";
+    mimeTypes["ear"] ="application/java-archive";
+    mimeTypes["json"] ="application/json";
+    mimeTypes["hqx"] ="application/mac-binhex40";
+    mimeTypes["doc"] ="application/msword";
+    mimeTypes["pdf"] ="application/pdf";
+    mimeTypes["ps"] ="application/postscript";
+    mimeTypes["eps"] ="application/postscript";
+    mimeTypes["ai"] ="application/postscript";
+    mimeTypes["rtf"] ="application/rtf";
+    mimeTypes["m3u8"] ="application/vnd.apple.mpegurl";
+    mimeTypes["kml"] ="application/vnd.google-earth.kml+xml";
+    mimeTypes["kmz"] ="application/vnd.google-earth.kmz";
+    mimeTypes["xls"] ="application/vnd.ms-excel";
+    mimeTypes["eot"] ="application/vnd.ms-fontobject";
+    mimeTypes["ppt"] ="application/vnd.ms-powerpoint";
+    mimeTypes["odg"] ="application/vnd.oasis.opendocument.graphics";
+    mimeTypes["odp"] ="application/vnd.oasis.opendocument.presentation";
+    mimeTypes["ods"] ="application/vnd.oasis.opendocument.spreadsheet";
+    mimeTypes["odt"] ="application/vnd.oasis.opendocument.text";
+    mimeTypes["pptx"] ="application/vnd.openxmlformats-officedocument.presentationml.presentation";
+    mimeTypes["xlsx"] ="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    mimeTypes["docx"] ="application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    mimeTypes["wmlc"] ="application/vnd.wap.wmlc";
+    mimeTypes["wasm"] ="application/wasm";
+    mimeTypes["7z"] ="application/x-7z-compressed";
+    mimeTypes["cco"] ="application/x-cocoa";
+    mimeTypes["jardiff"] ="application/x-java-archive-diff";
+    mimeTypes["jnlp"] ="application/x-java-jnlp-file";
+    mimeTypes["run"] ="application/x-makeself";
+    mimeTypes["pl"] ="application/x-perl";
+    mimeTypes["pm"] ="application/x-perl";
+    mimeTypes["prc"] ="application/x-pilot";
+    mimeTypes["pdb"] ="application/x-pilot";
+    mimeTypes["rar"] ="application/x-rar-compressed";
+    mimeTypes["rpm"] ="application/x-redhat-package-manager";
+    mimeTypes["sea"] ="application/x-sea";
+    mimeTypes["swf"] ="application/x-shockwave-flash";
+    mimeTypes["sit"] ="application/x-stuffit";
+    mimeTypes["tcl"] ="application/x-tcl";
+    mimeTypes["tk"] ="application/x-tcl";
+    mimeTypes["der"] ="application/x-x509-ca-cert";
+    mimeTypes["pem"] ="application/x-x509-ca-cert";
+    mimeTypes["crt"] ="application/x-x509-ca-cert";
+    mimeTypes["xpi"] ="application/x-xpinstall";
+    mimeTypes["xhtml"] ="application/xhtml+xml";
+    mimeTypes["xspf"] ="application/xspf+xml";
+    mimeTypes["zip"] ="application/zip";
+    mimeTypes["bin"] ="application/octet-stream";
+    mimeTypes["exe"] ="application/octet-stream";
+    mimeTypes["dll"] ="application/octet-stream";
+    mimeTypes["deb"] ="application/octet-stream";
+    mimeTypes["dmg"] ="application/octet-stream";
+    mimeTypes["iso"] ="application/octet-stream";
+    mimeTypes["img"] ="application/octet-stream";
+    mimeTypes["msi"] ="application/octet-stream";
+    mimeTypes["msp"] ="application/octet-stream";
+    mimeTypes["msm"] ="application/octet-stream";
+    mimeTypes["mid"] ="audio/midi";
+    mimeTypes["midi"] ="audio/midi";
+    mimeTypes["kar"] ="audio/midi";
+    mimeTypes["mp3"] ="audio/mpeg";
+    mimeTypes["ogg"] ="audio/ogg";
+    mimeTypes["m4a"] ="audio/x-m4a";
+    mimeTypes["ra"] ="audio/x-realaudio";
+    mimeTypes["3gpp"] ="video/3gpp";
+    mimeTypes["3gp"] ="video/3gpp";
+    mimeTypes["ts"] ="video/mp2t";
+    mimeTypes["mp4"] ="video/mp4";
+    mimeTypes["mpeg"] ="video/mpeg";
+    mimeTypes["mpg"] ="video/mpeg";
+    mimeTypes["mov"] ="video/quicktime";
+    mimeTypes["webm"] ="video/webm";
+    mimeTypes["flv"] ="video/x-flv";
+    mimeTypes["m4v"] ="video/x-m4v";
+    mimeTypes["mng"] ="video/x-mng";
+    mimeTypes["asx"] ="video/x-ms-asf";
+    mimeTypes["asf"] ="video/x-ms-asf";
+    mimeTypes["wmv"] ="video/x-ms-wmv";
+    mimeTypes["avi"] ="video/x-msvideo";
 
     size_t ppos =  path.find_last_of(".");
     if (ppos == std::string::npos)
