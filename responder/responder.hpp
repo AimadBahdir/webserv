@@ -18,8 +18,8 @@ class Responder
         std::string _indexOfPage(std::string _root, std::string _dir);
 
     private:
-        request _request;
-        location _location;
+        request     _request;
+        location    _location;
 
         std::string _cgiResponse();
         std::string _getMethode();
