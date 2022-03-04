@@ -6,7 +6,7 @@
 
 #include <unistd.h>
 // #include <csystem>
-
+#include <fcntl.h>
 int main()
 {
     std::map<std::string, std::string> statusCode;
@@ -16,7 +16,7 @@ int main()
 
     server srv1;
     srv1.host = "0.0.0.0";
-    srv1.port = "8000";
+    srv1.port = 8000;
     srv1.names.push_back("server1");
     srv1.names.push_back("server2");
     srv1.names.push_back("server3");
@@ -92,12 +92,43 @@ int main()
 
     Responder resp(req);
 
-    std::cout << resp.response();
+    // std::cout << resp.response();
 
     // system("cp -r ./default ~/webservconfig/");
     // system("rm -rf /tmp/webserv/*");
     // system("mkdir /tmp/webserv");
 
+    std::cout << resp._indexOfPage("/", "/");
+
+    // struct stat fileStat;
+    // stat("/exam", &fileStat);
+
+    // std::cout << (fileStat.st_mode & S_IWUSR) << std::endl;
+
+    int fd = open("/goinfre/abahdir/webserv/Makefile", O_RDONLY);
+    int readLen = 0;
+    char x[1024];
+
+    int sx = fcntl(fd, O_NONBLOCK);
+    std::cout << sx;
+    while ((readLen = read(fd, x, 1024)) > 0)
+    {
+        std::cout << x;
+    }
+    
+
+    // std::cout << ("File Permissions: \t");
+    // std::cout << ( (S_ISDIR(fileStat.st_mode)) ? "d" : "-");
+    // std::cout << ( (fileStat.st_mode & S_IRUSR) ? "r" : "-");
+    // std::cout << ( (fileStat.st_mode & S_IWUSR) ? "w" : "-");
+    // std::cout << ( (fileStat.st_mode & S_IXUSR) ? "x" : "-");
+    // std::cout << ( (fileStat.st_mode & S_IRGRP) ? "r" : "-");
+    // std::cout << ( (fileStat.st_mode & S_IWGRP) ? "w" : "-");
+    // std::cout << ( (fileStat.st_mode & S_IXGRP) ? "x" : "-");
+    // std::cout << ( (fileStat.st_mode & S_IROTH) ? "r" : "-");
+    // std::cout << ( (fileStat.st_mode & S_IWOTH) ? "w" : "-");
+    // std::cout << ( (fileStat.st_mode & S_IXOTH) ? "x" : "-");
+    // std::cout << ("\n\n");
     // std::pair<bool, std::string> res;
     // while (true)
     // {

@@ -17,12 +17,13 @@ struct location
 
 struct server
 {
-    std::string host;
-    std::string port;
-    std::vector<std::string> names;
-    std::vector<std::string> error_pages;
-    std::vector<location> locations;
-    int clientMaxBodySize;  
+    int                         port;
+    std::string                 host;
+    std::string                 root_path;
+    std::vector<std::string>    names;
+    std::vector<std::string>    error_pages;
+    std::vector<location>       locations;
+    int                         clientMaxBodySize;
 };
 
 struct request

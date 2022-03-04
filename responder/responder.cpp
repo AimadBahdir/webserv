@@ -26,12 +26,16 @@ Responder::~Responder() {}
 std::string Responder::response(void)
 {
     if (this->_request.methode.compare("GET") == 0)
+    {
+        //check if dir
+        //check for cgi
+        //
         return (_getMethode());
+    }
     else if (this->_request.methode.compare("POST") == 0)
         return (_postMethode());
     else if (this->_request.methode.compare("DELETE") == 0)
         return (_postMethode());
-    
     return ("RES");
 }
 
@@ -63,20 +67,20 @@ std::string Responder::_uploadFile()
 
 std::string Responder::_indexOfPage(std::string _root, std::string _dir)
 {
-    DIR *dp;
+    DIR *dir;
     struct dirent *dirp;
     struct stat stats;
     struct tm dt;
     std::string _html = "<html><head><title>Index of "+_dir+"</title>";
     _html += "<style>body{background-color:#123;color:#FFF;display:flex;justify-content:center;align-items:center;flex-direction:column;min-height:96vh;}";
-    _html += "pre {display:flex;justify-content:center;flex-direction:column;width:460px;}";
+    _html += "pre {display:flex;justify-content:center;align-items:center;flex-direction:column;width:460px;}";
     _html += "a {text-decoration:none;color:#FFF;overflow:hidden;text-overflow:ellipsis;}";
     _html += ".data span {font-size:12px}";
-    _html += ".data {display:flex;justify-content:space-between;font-size:15px;background:#234;padding:.5rem;border-radius:.6rem;min-width:5rem;padding-left:2rem;margin:.2rem;}</style>";
+    _html += ".data {display:flex;justify-content:space-between;font-size:15px;background:#234;padding:.5rem;border-radius:.6rem;min-width:35rem;padding-left:2rem;margin:.2rem;}</style>";
     _html += "</head><body><h1>Index of "+_dir+"</h1><pre>";
-    if((dp  = opendir(std::string(_root+""+_dir).c_str())) != NULL)
+    if((dir  = opendir(std::string(_root+""+_dir).c_str())) != NULL)
     {
-        while ((dirp = readdir(dp)) != NULL)
+        while ((dirp = readdir(dir)) != NULL)
         {
             if (dirp->d_name[0] == '.' && dirp->d_name[1] != '.')
                 continue;
@@ -87,13 +91,13 @@ std::string Responder::_indexOfPage(std::string _root, std::string _dir)
                     _html += "<a class='data' href='"+ std::string(dirp->d_name) +"'><< Back </a>\n";
                 else
                 {
-                    _html += "<div class='data'><a title='"+ std::string(dirp->d_name) +"' href='"+ std::string(dirp->d_name) +"'>" + std::string(dirp->d_name);
-                    _html += "</a><span>"+std::to_string(dt.tm_mday)+"/"+std::to_string(dt.tm_mon)+"/"+std::to_string(dt.tm_year + 1900)+" ";
-                    _html += std::to_string(dt.tm_hour)+":"+std::to_string(dt.tm_min)+"</span></div>\n";
+                    _html += "<div class='data'><a title='"+ std::string(dirp->d_name) +"' href='"+ std::string(dirp->d_name) +"'>" + std::string(dirp->d_name)+"</a><span>";
+                    _html += ((dt.tm_mday < 10) ? "0" : "")+std::to_string(dt.tm_mday)+"/"+((dt.tm_mon < 10) ? "0" : "")+std::to_string(dt.tm_mon)+"/"+std::to_string(dt.tm_year + 1900)+" ";
+                    _html += ((dt.tm_hour < 10) ? "0" : "")+std::to_string(dt.tm_hour)+":"+((dt.tm_min < 10) ? "0" : "")+std::to_string(dt.tm_min)+"</span></div>\n";
                 }
             }
         }
-        closedir(dp);
+        closedir(dir);
     }
     _html += "</pre><br/>webserv/1.0.0</body></html>";
     return (_html);
