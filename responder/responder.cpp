@@ -2,10 +2,20 @@
 
 Responder::Responder(request_parser req) : _request(req)
 {
-    if (req.getError().compare("200") == 0)
+    if (this->_errorsChecker())
     {
-        this->_location = this->_getLocation(req.getPath(), req.getServer().getLocations());
-        
+        this->_location = this->_getLocation(req.getPath(), req.getServer()._locations);
+        if (this->_request.getMethode().compare("GET") == 0)
+        {
+            //check if dir
+            //check for cgi
+            //
+            this->_getMethode();
+        }
+        else if (this->_request.getMethode().compare("POST") == 0)
+            this->_postMethode();
+        else if (this->_request.getMethode().compare("DELETE") == 0)
+            this->_postMethode();
     }
 }
 
@@ -23,44 +33,57 @@ Responder& Responder::operator=(Responder const & r)
 
 Responder::~Responder() {}
 
+bool    Responder::_errorsChecker(void)
+{
+    if (this->_request.getMethode() == "")
+    {
+        this->_statusCode = "405";
+        return false;
+    }
+    if (this->_request.getVersion().compare("HTTP/1.1") != 0)
+    {
+        this->_statusCode = "505";
+        return false;
+    }
+    std::map<std::string, std::string> _headers = this->_request.getHeaders();
+    if (_headers.find("Content-Length") != _headers.end()
+     && _headers.find("Transfer-Encoding") != _headers.end())
+    {
+        this->_statusCode = "400";
+        return false;
+    }
+
+    return true;
+}
+
 std::string Responder::response(void)
 {
-    if (this->_request.getMethode().compare("GET") == 0)
-    {
-        //check if dir
-        //check for cgi
-        //
-        return (_getMethode());
-    }
-    else if (this->_request.getMethode().compare("POST") == 0)
-        return (_postMethode());
-    else if (this->_request.getMethode().compare("DELETE") == 0)
-        return (_postMethode());
+    
     return ("RES");
 }
 
 
-std::string Responder::_cgiResponse() 
+std::string Responder::_cgiResponse(void) 
 {
     return ("CGI");
 }
 
-std::string Responder::_getMethode() 
+std::string Responder::_getMethode(void) 
 {
     return ("GET");
 }
 
-std::string Responder::_postMethode() 
+std::string Responder::_postMethode(void) 
 {
     return ("POST");
 }
 
-std::string Responder::_deleteMethode() 
+std::string Responder::_deleteMethode(void) 
 {
     return ("DELETE");
 }
 
-std::string Responder::_uploadFile() 
+std::string Responder::_uploadFile(void) 
 {
     return ("Res");
 }
@@ -127,14 +150,14 @@ location_parser Responder::_getLocation(std::string _reqPath, std::vector<locati
     size_t          _bestPath = 0;
     std::vector<std::string> _indexs;
     location_parser _loc;
-    _loc.setLocationPath("");
-    _loc.setAutoIndex(true);
-    _loc.setCGIPath("");
-    _indexs.push_back("index.html");
-    _loc.setIndexs(_indexs);
-    _loc.setRootPath("/goinfre/abahdir/webserv");
-    _loc.setUploadPath("default");
-    _loc.setRedirection(std::make_pair(1, "/"));
+    // _loc.setLocationPath("");
+    // _loc.setAutoIndex(true);
+    // _loc.setCgiPath("");
+    // _indexs.push_back("index.html");
+    // _loc.setIndexs(_indexs);
+    // _loc.setRootPath("/goinfre/abahdir/webserv");
+    // _loc.setUploadPath("default");
+    // _loc.setRedirection(std::make_pair("300", "/"));
 
     for (size_t i = 0; i < _locations.size(); i++)
     {
@@ -177,7 +200,7 @@ std::string Responder::_getError(std::string errorCode)
     statusCodes["402"] = "Payment Required";
     statusCodes["403"] = "Forbidden";
     statusCodes["404"] = "Not Found";
-    statusCodes["405"] = "Method Not Allowed";
+    statusCodes["405"] = "Not Allowed";
     statusCodes["406"] = "Not Acceptable";
     statusCodes["407"] = "Proxy Authentication Required";
     statusCodes["408"] = "Request Timeout";
