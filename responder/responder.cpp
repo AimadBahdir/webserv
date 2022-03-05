@@ -1,10 +1,10 @@
 #include "./responder.hpp"
 
-Responder::Responder(request req) : _request(req)
+Responder::Responder(request_parser req) : _request(req)
 {
-    if (req.error.compare("200") == 0)
+    if (req.getError().compare("200") == 0)
     {
-        this->_location = this->_getLocation(req.path, req.serv.locations);
+        this->_location = this->_getLocation(req.getPath(), req.getServer().getLocations());
         
     }
 }
@@ -25,16 +25,16 @@ Responder::~Responder() {}
 
 std::string Responder::response(void)
 {
-    if (this->_request.methode.compare("GET") == 0)
+    if (this->_request.getMethode().compare("GET") == 0)
     {
         //check if dir
         //check for cgi
         //
         return (_getMethode());
     }
-    else if (this->_request.methode.compare("POST") == 0)
+    else if (this->_request.getMethode().compare("POST") == 0)
         return (_postMethode());
-    else if (this->_request.methode.compare("DELETE") == 0)
+    else if (this->_request.getMethode().compare("DELETE") == 0)
         return (_postMethode());
     return ("RES");
 }
@@ -122,21 +122,23 @@ size_t  Responder::_cmpath(std::string path, std::string cmval)
     return (res * (cmval[i] == '\0'));
 }
 
-location Responder::_getLocation(std::string _reqPath, std::vector<location> _locations)
+location_parser Responder::_getLocation(std::string _reqPath, std::vector<location_parser> _locations)
 {
-    size_t _bestPath = 0;
-    location _loc;
-    _loc.location_path = "";
-    _loc.auto_index = true;
-    _loc.cgi_path = "";
-    _loc.index.push_back("index.html");
-    _loc.root_path = "/goinfre/abahdir/webserv";
-    _loc.upload_path = "default";
-    _loc.redirection = std::make_pair(1, "/");
+    size_t          _bestPath = 0;
+    std::vector<std::string> _indexs;
+    location_parser _loc;
+    _loc.setLocationPath("");
+    _loc.setAutoIndex(true);
+    _loc.setCGIPath("");
+    _indexs.push_back("index.html");
+    _loc.setIndexs(_indexs);
+    _loc.setRootPath("/goinfre/abahdir/webserv");
+    _loc.setUploadPath("default");
+    _loc.setRedirection(std::make_pair(1, "/"));
 
     for (size_t i = 0; i < _locations.size(); i++)
     {
-        size_t _cmp = this->_cmpath(_reqPath, _locations[i].location_path);
+        size_t _cmp = this->_cmpath(_reqPath, _locations[i].getLocationPath());
         _loc = (_cmp > _bestPath) ?  _locations[i] : _loc;
         _bestPath = (_cmp > _bestPath) ? _cmp : _bestPath;
     }

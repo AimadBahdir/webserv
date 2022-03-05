@@ -12,56 +12,54 @@ int main()
     std::map<std::string, std::string> statusCode;
 
 
-    std::vector<server> servers;
+    std::vector<server_parser> servers;
 
-    server srv1;
-    srv1.host = "0.0.0.0";
-    srv1.port = 8000;
-    srv1.names.push_back("server1");
-    srv1.names.push_back("server2");
-    srv1.names.push_back("server3");
-    srv1.error_pages.push_back("500");
-    srv1.error_pages.push_back("501");
-    srv1.error_pages.push_back("502");
-    srv1.error_pages.push_back("./50x.html");
+    server_parser srv1;
+    std::vector<std::string> _names;
+    std::vector<std::string> _errorPages;
+    srv1.setHost("0.0.0.0");
+    srv1.setPort(8000);
+    _names.push_back("server1");
+    _names.push_back("server2");
+    _names.push_back("server3");
+    _errorPages.push_back("500");
+    _errorPages.push_back("501");
+    _errorPages.push_back("502");
+    _errorPages.push_back("./50x.html");
 
-    location loc0, loc1, loc2, loc3;
-    loc0.location_path = "/";
-    loc0.auto_index = false;
-    loc0.cgi_path = "/Users/abahdir/goinfre/.brew/bin/php-cgi";
-    loc0.index.push_back("index.html");
-    loc0.index.push_back("index.php");
-    loc0.index.push_back("index.htm");
-    loc0.root_path = "/goinfre/abahdir/nginxTest/";
+    location_parser loc0, loc1, loc2, loc3;
+    std::vector<std::string> _indexs;
+    _indexs.push_back("index.html");
+    _indexs.push_back("index.php");
+    _indexs.push_back("index.htm");
+    
+    loc0.setLocationPath("/");
+    loc0.setAutoIndex(false);
+    loc0.setCGIPath("/Users/abahdir/goinfre/.brew/bin/php-cgi");
+    loc0.setRootPath("/goinfre/abahdir/nginxTest/");
 
-    loc1.location_path = "/home/";
-    loc1.auto_index = false;
-    loc1.cgi_path = "/Users/abahdir/goinfre/.brew/bin/php-cgi";
-    loc1.index.push_back("index.html");
-    loc1.index.push_back("index.php");
-    loc1.index.push_back("index.htm");
-    loc1.root_path = "/goinfre/abahdir/nginxTest/";
+    loc1.setLocationPath("/home/");
+    loc1.setAutoIndex(false);
+    loc1.setCGIPath("/Users/abahdir/goinfre/.brew/bin/php-cgi");
+    loc1.setRootPath("/goinfre/abahdir/nginxTest/");
 
-    loc2.location_path = "/indesx.js";
-    loc2.auto_index = false;
-    loc2.cgi_path = "/Users/abahdir/goinfre/.brew/bin/php-cgi";
-    loc2.index.push_back("index.html");
-    loc2.index.push_back("index.php");
-    loc2.index.push_back("index.htm");
-    loc2.root_path = "/goinfre/abahdir/nginxTest/";
+    loc2.setLocationPath("/indesx.js");
+    loc2.setAutoIndex(true);
+    loc2.setCGIPath("/Users/abahdir/goinfre/.brew/bin/php-cgi");
+    loc2.setRootPath("/goinfre/abahdir/nginxTest/");
 
-    loc3.location_path = ".php";
-    loc3.auto_index = false;
-    loc3.cgi_path = "/Users/abahdir/goinfre/.brew/bin/php-cgi";
-    loc3.index.push_back("index.html");
-    loc3.index.push_back("index.php");
-    loc3.index.push_back("index.htm");
-    loc3.root_path = "/goinfre/abahdir/nginxTest/";
+    loc3.setLocationPath(".php");
+    loc3.setAutoIndex(false);
+    loc3.setCGIPath("/Users/abahdir/goinfre/.brew/bin/php-cgi");
+    loc3.setRootPath("/goinfre/abahdir/nginxTest/");
 
-    srv1.locations.push_back(loc0);
-    srv1.locations.push_back(loc1);
-    srv1.locations.push_back(loc2);
-    srv1.locations.push_back(loc3);
+    std::vector<location_parser> _locations;
+
+    _locations.push_back(loc0);
+    _locations.push_back(loc1);
+    _locations.push_back(loc2);
+    _locations.push_back(loc3);
+    srv1.setLocations(_locations);
     servers.push_back(srv1);
 
     std::map<std::string, std::string> headers;
@@ -80,15 +78,15 @@ int main()
     headers["Accept-Encoding"] = "gzip, deflate, br";
     headers["Accept-Language"] = "en-US,en;q=0.9";
 
-    request req;
-    req.error = "200";
-    req.serv = servers[0];
-    req.methode = "GET";
-    req.path = "/home/index.js";
-    req.queries = "";
-    req.version = "HTTP/1.1";
-    req.headers = headers;
-    req.bodyFile = "";
+    request_parser req;
+    req.setError("200");
+    req.setServer(servers[0]);
+    req.setMethode("GET");
+    req.setPath("/home/index.js");
+    req.setQueries("");
+    req.setVersion("HTTP/1.1");
+    req.setHeaders(headers);
+    req.setBodyFile("./Makefile");
 
     Responder resp(req);
 
@@ -140,3 +138,4 @@ int main()
     // std::cout << resp._indexOfPage("/goinfre/abahdir/nginxTest/", "/ok/") << std::endl;
     return (0);
 }
+
