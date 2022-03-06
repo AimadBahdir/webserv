@@ -4,18 +4,21 @@ Responder::Responder(request_parser req) : _request(req)
 {
     if (this->_errorsChecker())
     {
-        this->_location = this->_getLocation(req.getPath(), req.getServer()._locations);
-        if (this->_request.getMethode().compare("GET") == 0)
+        if (this->_setLocation(req.getPath(), req.getServer()._locations))
         {
-            //check if dir
-            //check for cgi
-            //
-            this->_getMethode();
+            std::cout << this->_location.getRootPath() << std::endl;
+            if (this->_request.getMethode().compare("GET") == 0)
+            {
+                //check if dir
+                //check for cgi
+                //
+                this->_getMethode();
+            }
+            else if (this->_request.getMethode().compare("POST") == 0)
+                this->_postMethode();
+            else if (this->_request.getMethode().compare("DELETE") == 0)
+                this->_postMethode();
         }
-        else if (this->_request.getMethode().compare("POST") == 0)
-            this->_postMethode();
-        else if (this->_request.getMethode().compare("DELETE") == 0)
-            this->_postMethode();
     }
 }
 
@@ -147,11 +150,10 @@ size_t  Responder::_cmpath(std::string path, std::string cmval)
     return (res * (cmval[i] == '\0'));
 }
 
-location_parser Responder::_getLocation(std::string _reqPath, std::vector<location_parser> _locations)
+bool Responder::_setLocation(std::string _reqPath, std::vector<location_parser> _locations)
 {
     size_t          _bestPath = 0;
     std::vector<std::string> _indexs;
-    location_parser _loc;
     // _loc.setLocationPath("");
     // _loc.setAutoIndex(true);
     // _loc.setCgiPath("");
@@ -164,10 +166,10 @@ location_parser Responder::_getLocation(std::string _reqPath, std::vector<locati
     for (size_t i = 0; i < _locations.size(); i++)
     {
         size_t _cmp = this->_cmpath(_reqPath, _locations[i].getLocationPath());
-        _loc = (_cmp > _bestPath) ?  _locations[i] : _loc;
+        this->_location = (_cmp > _bestPath) ?  _locations[i] : this->_location;
         _bestPath = (_cmp > _bestPath) ? _cmp : _bestPath;
     }
-    return (_loc);
+    return (true);
 }
 
 std::string Responder::_getError(std::string errorCode)

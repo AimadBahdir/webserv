@@ -25,6 +25,7 @@ class Responder
         location_parser    _location;
         std::string        _statusCode;
 
+        bool            _setLocation(std::string _reqPath, std::vector<location_parser> _locations);
         bool            _errorsChecker(void);
         std::string     _cgiResponse(void);
         std::string     _getMethode(void);
@@ -35,6 +36,5 @@ class Responder
         std::string     _getMimeType(std::string path);
         std::string     _getError(std::string errorCode);
         size_t          _cmpath(std::string path, std::string cmval);
-        location_parser _getLocation(std::string _reqPath, std::vector<location_parser> _locations);
         // std::string _generateResponse();
 };
