@@ -98,8 +98,8 @@ int     main(int ac , char *av[])
             req.setBodyFile("./Makefile");
 
             Responder resp(req);
-            // std::cout << resp._indexOfPage("/", "/");
-            printConfData(conf->_servers);
+            std::cout << resp._indexOfPage("/", "/");
+            // printConfData(conf->_servers);
 
 
             delete conf;
