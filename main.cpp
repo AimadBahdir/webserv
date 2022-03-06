@@ -9,6 +9,59 @@
 #include <unistd.h>
 // #include <csystem>
 #include <fcntl.h>
+
+void printConfData(std::vector<server_parser> _srvs)
+{
+    if (_srvs.size() > 0)
+    {
+        std::cout << "\n## SERVERS ##\n" << std::endl;
+        for(size_t i = 0; i < _srvs.size(); i++)
+        {
+            server_parser _srv = _srvs[i];
+            std::cout << _srv.getHost() << std::endl;
+            std::cout << _srv.getPort() << std::endl;
+            std::cout << _srv.getRoot() << std::endl;
+            std::vector<std::string> _srvNames = _srv.getNames();
+            if (_srvNames.size() > 0)
+                for(size_t i = 0; i < _srvNames.size(); i++)
+                    std::cout << _srvNames[i] << std::endl;
+            std::vector<std::string> _srvErrorPages = _srv.getErrorPages();
+            if (_srvErrorPages.size() > 0)
+                for(size_t i = 0; i < _srvErrorPages.size(); i++)
+                    std::cout << _srvErrorPages[i] << std::endl;
+            std::cout << _srv.getMaxSzie() << std::endl;
+
+            //locations
+            std::vector<location_parser> _locs = _srv._locations;
+            if (_locs.size() > 0)
+            {
+                std::cout << "\n>>> LOCATIONS <<<\n" << std::endl;
+                for(size_t i = 0; i < _locs.size(); i++)
+                {
+                    std::cout << _locs[i].getLocationPath() << std::endl;
+                    std::vector<std::string> _locAcceptedReq = _locs[i].getAcceptedRequeasts();
+                    if (_locAcceptedReq.size() > 0)
+                        for(size_t i = 0; i < _locAcceptedReq.size(); i++)
+                            std::cout << _locAcceptedReq[i] << std::endl;
+                    std::cout << _locs[i].getAutoIndex() << std::endl;
+                    std::cout << _locs[i].getCgiPath() << std::endl;
+                    std::cout << _locs[i].getRootPath() << std::endl;
+                    std::cout << _locs[i].getUploadPath() << std::endl;
+                    std::cout << _locs[i].getRedirection().first << " --> " << _locs[i].getRedirection().second << std::endl;
+                    std::vector<std::string> _locIndexs = _locs[i].getIndex();
+                    if (_locIndexs.size() > 0)
+                        for(size_t i = 0; i < _locIndexs.size(); i++)
+                            std::cout << _locIndexs[i] << std::endl;
+                    std::cout << ">>>>>>" << std::endl;
+                }
+                std::cout << ">>> END LOCATIONS <<<" << std::endl;
+            }
+            std::cout << "######" << std::endl;
+        }
+        std::cout << "### END SERVERS ###" << std::endl;
+    }
+}
+
 int     main(int ac , char *av[])
 {
 
@@ -46,7 +99,8 @@ int     main(int ac , char *av[])
 
             Responder resp(req);
             // std::cout << resp._indexOfPage("/", "/");
-            std::cout << req.getServer()._locations[0].getAutoIndex() << std::endl;
+            printConfData(conf->_servers);
+
 
             delete conf;
         }
