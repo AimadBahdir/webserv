@@ -34,6 +34,7 @@ class Responder
         void            _setIndex(void);
         bool            _setLocation(std::string _reqPath, std::vector<location_parser> _locations);
         bool            _errorsChecker(void);
+        std::string     _getDateTime();
         std::string     _trimPath(std::string _path);
         std::string     _cgiResponse(void);
         std::string     _getMethode(void);

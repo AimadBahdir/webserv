@@ -89,7 +89,7 @@ int     main(int ac , char *av[])
 
             request_parser req;
             req.setMethode("GET");
-            req.setPath("/home/blog");
+            req.setPath("/");
             req.setQueries("");
             req.setVersion("HTTP/1.1");
             req.setHeaders(headers);

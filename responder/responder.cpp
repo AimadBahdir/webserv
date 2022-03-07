@@ -146,24 +146,42 @@ void    Responder::_prepareResponse(void)
     }
 }
 
+std::string Responder::_getDateTime()
+{
+    char dateBuffer[1000];
+    time_t now = time(0);
+    struct tm dt = *gmtime(&now);
+    std::strftime(dateBuffer, sizeof(dateBuffer), "%a, %d %b %Y %H:%M:%S %Z", &dt);
+    return (std::string(dateBuffer));
+}
+
 std::string Responder::_generateResponse(void)
 {
     std::cout << "RESPONSE : \n";
     std::cout << this->_indexPath << std::endl;
     std::cout << "HTTP/1.1 " << this->_statusCode << " " << this->_getError(this->_statusCode) << "\r\n";
+    std::cout << "Server: webserv/1.0.0\r\n";
+    std::cout << "Date: "<< this->_getDateTime() <<"\r\n";
+    std::cout << "Content-Length: "<< "15220" <<"\r\n";
+    std::cout << "Connection: "<< "keep-alive" <<"\r\n";
     int fd;
-    
     if (!this->_indexPath.empty())
-        fd = open(this->_indexPath.c_str(), O_RDONLY);
-    else
-        fd = open(this->_rootPath.c_str(), O_RDONLY);
-    int readLen = 0;
-    char x[1024];
-
-    while ((readLen = read(fd, x, 1024)) > 0)
     {
-        x[readLen] = '\0';
-        std::cout << x;
+        fd = open(this->_indexPath.c_str(), O_RDONLY);
+        std::cout << "Content-Type: " << this->_getMimeType(this->_indexPath) << "\r\n\r\n";
+        int readLen = 0;
+        char x[1024];
+        while ((readLen = read(fd, x, 1024)) > 0)
+        {
+            x[readLen] = '\0';
+            std::cout << x;
+        }
+    }
+    else
+    {
+        fd = open(this->_rootPath.c_str(), O_RDONLY);
+        std::cout << "Content-Type: " << this->_getMimeType(".html") << "\r\n\r\n";
+        std::cout << this->_indexOfPage(this->_rootPath, this->_request.getPath());
     }
     return (_rootPath);
 }
@@ -220,7 +238,6 @@ std::string Responder::_indexOfPage(std::string _root, std::string _dir)
                     _html << "<a class='data' href='" << std::string(dirp->d_name) << "'><< Back </a>\n";
                 else
                 {
-                    
                     _html << "<div class='data'><a title='" << dirp->d_name << "' href='" << std::string(dirp->d_name) << "'>" << std::string(dirp->d_name) << "</a><span>";
                     _html << ((dt.tm_mday < 10) ? "0" : "") << dt.tm_mday << "/" << ((dt.tm_mon < 10) ? "0" : "") << dt.tm_mon << "/" << dt.tm_year + 1900 << " ";
                     _html << ((dt.tm_hour < 10) ? "0" : "") << dt.tm_hour << ":" << ((dt.tm_min < 10) ? "0" : "") << dt.tm_min << "</span></div>\n";
