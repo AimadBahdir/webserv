@@ -88,8 +88,6 @@ int     main(int ac , char *av[])
             headers["Accept-Language"] = "en-US,en;q=0.9";
 
             request_parser req;
-            req.setError("200");
-            req.setServer(conf->_servers[0]);
             req.setMethode("GET");
             req.setPath("/home/index.js");
             req.setQueries("");
@@ -97,10 +95,10 @@ int     main(int ac , char *av[])
             req.setHeaders(headers);
             req.setBodyFile("./Makefile");
 
-            Responder resp(req);
+            Responder resp(req, conf->_servers[0]);
             // std::cout << resp._indexOfPage("/", "/");
             // printConfData(conf->_servers);
-
+            std::cout << resp._generateResponse();
 
             delete conf;
         }

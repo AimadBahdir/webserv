@@ -12,19 +12,26 @@
 class Responder
 {
     public:
-        explicit Responder(request_parser);
+        explicit Responder(request_parser, server_parser);
         explicit Responder(Responder const & r);
         Responder& operator=(Responder const & r);
         ~Responder (void);
         std::string response(void);
         std::string _generateErrorBody(std::string errorMessage);
         std::string _indexOfPage(std::string _root, std::string _dir);
+        std::string _generateResponse();
 
     private:
         request_parser     _request;
+        server_parser      _server;
         location_parser    _location;
         std::string        _statusCode;
+        std::string        _rootPath;
+        std::string        _indexPath;
+        bool               _inProgress;
 
+        void            _prepareResponse(void);
+        void            _setIndex(void);
         bool            _setLocation(std::string _reqPath, std::vector<location_parser> _locations);
         bool            _errorsChecker(void);
         std::string     _cgiResponse(void);
@@ -36,5 +43,4 @@ class Responder
         std::string     _getMimeType(std::string path);
         std::string     _getError(std::string errorCode);
         size_t          _cmpath(std::string path, std::string cmval);
-        // std::string _generateResponse();
 };

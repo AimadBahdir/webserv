@@ -68,8 +68,6 @@
 class request_parser
 {
     private:
-        std::string                         error;
-        server_parser                       serv;
         std::string                         methode;
         std::string                         path;
         std::string                         queries;
@@ -78,8 +76,6 @@ class request_parser
         std::string                         bodyFile;
 
     public:
-        std::string                         getError() { return error; }
-        server_parser                       getServer() { return serv; }
         std::string                         getMethode() { return methode; }
         std::string                         getPath() { return path; }
         std::string                         getQueries() { return queries; }
@@ -87,8 +83,6 @@ class request_parser
         std::map<std::string, std::string>  getHeaders() { return headers; }
         std::string                         getBodyFile() { return bodyFile; }
 
-        void                                setError(std::string error) {  this->error = error; }
-        void                                setServer(server_parser serv) {  this->serv = serv; }
         void                                setMethode(std::string methode) {  this->methode = methode; }
         void                                setPath(std::string path) {  this->path = path; }
         void                                setQueries(std::string queries) {  this->queries = queries; }

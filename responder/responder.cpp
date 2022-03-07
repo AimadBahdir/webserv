@@ -1,25 +1,13 @@
 #include "./responder.hpp"
+#ifndef WEBDEFAULT
+    #define WEBDEFAULT "/goinfre/abahdir/webservConf"
+#endif
 
-Responder::Responder(request_parser req) : _request(req)
+Responder::Responder(request_parser req, server_parser serv) : _request(req), _server(serv), _rootPath(WEBDEFAULT), _inProgress(false)
 {
-    if (this->_errorsChecker())
-    {
-        if (this->_setLocation(req.getPath(), req.getServer()._locations))
-        {
-            std::cout << this->_location.getRootPath() << std::endl;
-            if (this->_request.getMethode().compare("GET") == 0)
-            {
-                //check if dir
-                //check for cgi
-                //
-                this->_getMethode();
-            }
-            else if (this->_request.getMethode().compare("POST") == 0)
-                this->_postMethode();
-            else if (this->_request.getMethode().compare("DELETE") == 0)
-                this->_postMethode();
-        }
-    }
+    struct stat _fstat;
+    if (stat("./default", &_fstat) == 0 && S_ISDIR(_fstat.st_mode))
+        system(std::string("cp -r ./default "+this->_rootPath).c_str());
 }
 
 Responder::Responder(Responder const & r)
@@ -31,6 +19,9 @@ Responder& Responder::operator=(Responder const & r)
 {
     this->_request = r._request;
     this->_location = r._location;
+    this->_server = r._server;
+    this->_statusCode = r._statusCode;
+    this->_inProgress = r._inProgress;
     return (*this);
 }
 
@@ -61,12 +52,70 @@ bool    Responder::_errorsChecker(void)
 
 std::string Responder::response(void)
 {
-    
-    return ("RES");
+    if (this->_errorsChecker())
+    {
+        if (this->_setLocation(this->_request.getPath(), this->_server._locations)
+        && !this->_location.getRootPath().empty())
+            this->_rootPath = this->_location.getRootPath();
+        else if (!this->_server.getRoot().empty())
+            this->_rootPath = this->_server.getRoot();
+        this->_prepareResponse();
+    }
+    return (this->_generateResponse());
 }
 
+void    Responder::_setIndex(void)
+{
+    struct stat _fstats;
+    std::string _testPath;
+    std::vector<std::string> _indexs = this->_location.getIndex();
 
-std::string Responder::_cgiResponse(void) 
+    for (size_t i = 0; i < _indexs.size(); i++)
+    {
+        _testPath = this->_rootPath;
+        _testPath += this->_location.getLocationPath();
+        _testPath += _indexs[i];
+        if (stat(_testPath.c_str(), &_fstats) == 0)
+        {
+            if (S_ISDIR(_fstats.st_mode))
+            {
+                this->_rootPath += _indexs[i];
+                this->_prepareResponse();
+            }
+        }
+    }
+}
+
+void    Responder::_prepareResponse(void)
+{
+    struct stat _fstats;
+
+    this->_inProgress = true;
+    if (stat(this->_rootPath.c_str(), &_fstats) == 0)
+    {
+        if (S_ISDIR(_fstats.st_mode))
+        {
+            if (!this->_location.getLocationPath().empty())
+            {
+                if (!this->_location.getCgiPath().empty())
+                {
+                    
+                }
+                else if (this->_location.getIndex().size() > 0)
+                    this->_setIndex();
+            }
+        }
+    }
+}
+
+std::string Responder::_generateResponse(void)
+{
+    
+    //else not found
+    return (_rootPath);
+}
+
+std::string Responder::_cgiResponse(void)
 {
     return ("CGI");
 }
@@ -169,7 +218,7 @@ bool Responder::_setLocation(std::string _reqPath, std::vector<location_parser> 
         this->_location = (_cmp > _bestPath) ?  _locations[i] : this->_location;
         _bestPath = (_cmp > _bestPath) ? _cmp : _bestPath;
     }
-    return (true);
+    return (!this->_location.getLocationPath().empty());
 }
 
 std::string Responder::_getError(std::string errorCode)
