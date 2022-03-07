@@ -52,36 +52,49 @@ bool    Responder::_errorsChecker(void)
 
 std::string Responder::response(void)
 {
+    if (this->_inProgress)
+        return (this->_generateResponse());
     if (this->_errorsChecker())
     {
-        if (this->_setLocation(this->_request.getPath(), this->_server._locations)
-        && !this->_location.getRootPath().empty())
-            this->_rootPath = this->_location.getRootPath();
-        else if (!this->_server.getRoot().empty())
-            this->_rootPath = this->_server.getRoot();
+        this->_setLocation(this->_request.getPath(), this->_server._locations);
+        this->_setRootPath();
         this->_prepareResponse();
     }
     return (this->_generateResponse());
 }
 
+void    Responder::_setRootPath(void)
+{
+    if(!this->_location.getLocationPath().empty()
+    && !this->_location.getRootPath().empty())
+        this->_rootPath = this->_location.getRootPath();
+    else if (!this->_server.getRoot().empty())
+        this->_rootPath = this->_server.getRoot();
+    else
+        this->_rootPath = WEBDEFAULT;
+}
+
 void    Responder::_setIndex(void)
 {
     struct stat _fstats;
-    std::string _testPath;
     std::vector<std::string> _indexs = this->_location.getIndex();
 
     for (size_t i = 0; i < _indexs.size(); i++)
     {
-        _testPath = this->_rootPath;
-        _testPath += this->_location.getLocationPath();
-        _testPath += _indexs[i];
-        if (stat(_testPath.c_str(), &_fstats) == 0)
+        this->_indexPath = this->_rootPath;
+        this->_indexPath += this->_location.getLocationPath();
+        this->_indexPath += _indexs[i];
+        if (stat(this->_indexPath.c_str(), &_fstats) == 0)
         {
             if (S_ISDIR(_fstats.st_mode))
             {
-                this->_rootPath += _indexs[i];
-                this->_prepareResponse();
+                this->_rootPath += "/"+_indexs[i];
+                this->_indexPath.clear();
+                if (this->_setLocation(this->_indexPath, this->_server._locations))
+                    this->_prepareResponse();
             }
+            this->_statusCode = "200";
+            return ;
         }
     }
 }
@@ -99,10 +112,31 @@ void    Responder::_prepareResponse(void)
             {
                 if (!this->_location.getCgiPath().empty())
                 {
-                    
+                    std::cout << _cgiResponse() << std::endl;
+                    this->_statusCode = "200";
                 }
                 else if (this->_location.getIndex().size() > 0)
                     this->_setIndex();
+                else if (this->_location.getAutoIndex())
+                    this->_statusCode = "200";
+                else
+                    this->_statusCode = "403";
+            }
+            // else default
+            std::cout << "RUN DEFAULT" << std::endl;
+        }
+        else
+        {
+            if (!this->_location.getLocationPath().empty() 
+            && !this->_location.getCgiPath().empty())
+            {
+                std::cout << _cgiResponse() << std::endl;
+                this->_statusCode = "200";
+            }
+            else
+            {
+                std::cout << "RUN REQUEST" << std::endl;
+                this->_statusCode = "200";
             }
         }
     }
@@ -117,7 +151,7 @@ std::string Responder::_generateResponse(void)
 
 std::string Responder::_cgiResponse(void)
 {
-    return ("CGI");
+    return ("CGI EXECUTE");
 }
 
 std::string Responder::_getMethode(void) 

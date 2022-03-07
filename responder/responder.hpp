@@ -31,6 +31,7 @@ class Responder
         bool               _inProgress;
 
         void            _prepareResponse(void);
+        void            _setRootPath(void);
         void            _setIndex(void);
         bool            _setLocation(std::string _reqPath, std::vector<location_parser> _locations);
         bool            _errorsChecker(void);

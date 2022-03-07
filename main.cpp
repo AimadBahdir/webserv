@@ -89,7 +89,7 @@ int     main(int ac , char *av[])
 
             request_parser req;
             req.setMethode("GET");
-            req.setPath("/home/index.js");
+            req.setPath("/");
             req.setQueries("");
             req.setVersion("HTTP/1.1");
             req.setHeaders(headers);
@@ -98,7 +98,8 @@ int     main(int ac , char *av[])
             Responder resp(req, conf->_servers[0]);
             // std::cout << resp._indexOfPage("/", "/");
             // printConfData(conf->_servers);
-            std::cout << resp._generateResponse();
+            // std::cout << resp._generateResponse();
+            resp.response();
 
             delete conf;
         }
