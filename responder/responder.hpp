@@ -20,7 +20,6 @@ class Responder
         std::string _generateErrorBody(std::string errorMessage);
         std::string _indexOfPage(std::string _root, std::string _dir);
         std::string _generateResponse();
-
     private:
         request_parser     _request;
         server_parser      _server;
@@ -35,6 +34,7 @@ class Responder
         void            _setIndex(void);
         bool            _setLocation(std::string _reqPath, std::vector<location_parser> _locations);
         bool            _errorsChecker(void);
+        std::string     _trimPath(std::string _path);
         std::string     _cgiResponse(void);
         std::string     _getMethode(void);
         std::string     _postMethode(void);

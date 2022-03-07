@@ -1,4 +1,7 @@
 #include "./responder.hpp"
+#include <fcntl.h>
+#include <unistd.h>
+
 #ifndef WEBDEFAULT
     #define WEBDEFAULT "/goinfre/abahdir/webservConf"
 #endif
@@ -96,6 +99,8 @@ void    Responder::_setIndex(void)
             this->_statusCode = "200";
             return ;
         }
+        else
+            this->_indexPath.clear();
     }
 }
 
@@ -123,7 +128,6 @@ void    Responder::_prepareResponse(void)
                     this->_statusCode = "403";
             }
             // else default
-            std::cout << "RUN DEFAULT" << std::endl;
         }
         else
         {
@@ -144,8 +148,23 @@ void    Responder::_prepareResponse(void)
 
 std::string Responder::_generateResponse(void)
 {
+    std::cout << "RESPONSE : \n";
+    std::cout << this->_indexPath << std::endl;
+    std::cout << "HTTP/1.1 " << this->_statusCode << " " << this->_getError(this->_statusCode) << "\r\n";
+    int fd;
     
-    //else not found
+    if (!this->_indexPath.empty())
+        fd = open(this->_indexPath.c_str(), O_RDONLY);
+    else
+        fd = open(this->_rootPath.c_str(), O_RDONLY);
+    int readLen = 0;
+    char x[1024];
+
+    while ((readLen = read(fd, x, 1024)) > 0)
+    {
+        x[readLen] = '\0';
+        std::cout << x;
+    }
     return (_rootPath);
 }
 
@@ -214,15 +233,36 @@ std::string Responder::_indexOfPage(std::string _root, std::string _dir)
     return (_html.str());
 }
 
+std::string Responder::_trimPath(std::string _path)
+{
+    std::string _newPath;
+    for (size_t i = 0; i < _path.length(); i++)
+    {
+        if (_path[i] == '/' && _path[i] == _path[i + 1])
+            continue;
+        _newPath += _path[i];
+    }
+    return (_newPath);
+}
+
 size_t  Responder::_cmpath(std::string path, std::string cmval)
 {
     size_t res = 0;
     size_t i = 0;
     size_t _ext = path.find_last_of('.');
+    path = this->_trimPath(path);
+    cmval = this->_trimPath(cmval);
     if (_ext != std::string::npos && cmval.compare(path.substr(_ext)) == 0)
         return (std::string::npos);
     else if (cmval.compare(path) == 0)
         return (std::string::npos - 1);
+    else
+    {
+        path = this->_trimPath(path+'/');
+        cmval = this->_trimPath(cmval+'/');
+        if (cmval.compare(path) == 0)
+            return (std::string::npos - 1);
+    }
     while(i < path.length())
     {
         if (path[i] != cmval[i])
@@ -245,10 +285,10 @@ bool Responder::_setLocation(std::string _reqPath, std::vector<location_parser> 
     // _loc.setRootPath("/goinfre/abahdir/webserv");
     // _loc.setUploadPath("default");
     // _loc.setRedirection(std::make_pair("300", "/"));
-
+    _reqPath =  this->_trimPath(_reqPath);
     for (size_t i = 0; i < _locations.size(); i++)
     {
-        size_t _cmp = this->_cmpath(_reqPath, _locations[i].getLocationPath());
+        size_t _cmp = this->_cmpath(_reqPath, this->_trimPath(_locations[i].getLocationPath()));
         this->_location = (_cmp > _bestPath) ?  _locations[i] : this->_location;
         _bestPath = (_cmp > _bestPath) ? _cmp : _bestPath;
     }
