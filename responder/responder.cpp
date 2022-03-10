@@ -99,32 +99,43 @@ void    Responder::_setRootPath(void)
     }
 }
 
-void    Responder::_setIndex(void)
+bool    Responder::_setIndex(std::string _index)
 {
     struct stat _fstats;
+
+    this->_indexPath = this->_rootPath;
+    this->_indexPath += this->_location.getLocationPath();
+    this->_indexPath += _index;
+    this->_indexPath = this->_trimPath(this->_indexPath);
+    if (stat(this->_indexPath.c_str(), &_fstats) == 0)
+    {
+        if (S_ISDIR(_fstats.st_mode))
+        {
+            this->_rootPath = this->_trimPath(this->_rootPath + "/" + _index);
+            this->_indexPath.clear();
+            if (this->_setLocation(this->_indexPath, this->_server._locations))
+                this->_prepareResponse();
+        }
+        this->_statusCode = "200";
+        return true;
+    }
+    else
+        this->_indexPath.clear();
+    return false;
+}
+
+void    Responder::_setIndexs(void)
+{
     std::vector<std::string> _indexs = this->_location.getIndex();
 
-    for (size_t i = 0; i < _indexs.size(); i++)
+    if (_indexs.size() == 0)
     {
-        this->_indexPath = this->_rootPath;
-        this->_indexPath += this->_location.getLocationPath();
-        this->_indexPath += _indexs[i];
-        this->_indexPath = this->_trimPath(this->_indexPath);
-        if (stat(this->_indexPath.c_str(), &_fstats) == 0)
-        {
-            if (S_ISDIR(_fstats.st_mode))
-            {
-                this->_rootPath += "/"+_indexs[i];
-                this->_indexPath.clear();
-                if (this->_setLocation(this->_indexPath, this->_server._locations))
-                    this->_prepareResponse();
-            }
-            this->_statusCode = "200";
-            return ;
-        }
-        else
-            this->_indexPath.clear();
+        this->_setIndex("index.html");
+        return;
     }
+    for (size_t i = 0; i < _indexs.size(); i++)
+        if (this->_setIndex(_indexs[i]))
+            break;
 }
 
 void    Responder::_prepareResponse(void)
@@ -143,7 +154,7 @@ void    Responder::_prepareResponse(void)
                     this->_statusCode = "200";
                 }
                 else if (this->_location.getIndex().size() > 0)
-                    this->_setIndex();
+                    this->_setIndexs();
             }
             if (this->_location.getAutoIndex())
                 this->_statusCode = "200";

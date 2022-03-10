@@ -33,7 +33,8 @@ class Responder
 
         void            _prepareResponse(void);
         void            _setRootPath(void);
-        void            _setIndex(void);
+        void            _setIndexs(void);
+        bool            _setIndex(std::string _index);
         bool            _setLocation(std::string _reqPath, std::vector<location_parser> _locations);
         bool            _errorsChecker(void);
         std::string     _getDateTime();
