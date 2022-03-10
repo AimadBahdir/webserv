@@ -6,7 +6,7 @@
     #define WEBDEFAULT "/goinfre/abahdir/webservConf"
 #endif
 
-Responder::Responder(request_parser req, server_parser serv) : _request(req), _server(serv), _rootPath(WEBDEFAULT), _inProgress(false)
+Responder::Responder(request_parser req, server_parser serv) : _request(req), _server(serv), _statusCode("200"), _rootPath(WEBDEFAULT), _inProgress(false), _CGI(false)
 {
     struct stat _fstat;
     if (stat("./default", &_fstat) == 0 && S_ISDIR(_fstat.st_mode))
@@ -49,6 +49,13 @@ bool    Responder::_errorsChecker(void)
         this->_statusCode = "400";
         return false;
     }
+    if (this->_request.getMethode().compare("GET") != 0
+        && this->_request.getMethode().compare("POST") != 0
+        && this->_request.getMethode().compare("DELETE") != 0)
+    {
+        this->_statusCode = "501";
+        return false;
+    }
 
     return true;
 }
@@ -66,15 +73,30 @@ std::string Responder::response(void)
     return (this->_generateResponse());
 }
 
+size_t  Responder::_getFileLength(std::string _fpath)
+{
+    std::ifstream _file;
+    size_t length;
+
+    _file.open (_fpath.c_str(), std::ios::binary);
+    _file.seekg (0, std::ios::end);
+    length = _file.tellg();
+    _file.close();
+    return (length);
+}
+
 void    Responder::_setRootPath(void)
 {
     if(!this->_location.getLocationPath().empty()
     && !this->_location.getRootPath().empty())
-        this->_rootPath = this->_location.getRootPath();
+        this->_rootPath = this->_trimPath(this->_location.getRootPath() + "/" + this->_request.getPath());
     else if (!this->_server.getRoot().empty())
-        this->_rootPath = this->_server.getRoot();
+        this->_rootPath = this->_trimPath(this->_server.getRoot() + "/" + this->_request.getPath());
     else
+    {
         this->_rootPath = WEBDEFAULT;
+        this->_rootPath = this->_trimPath(this->_rootPath + "/" + this->_request.getPath());
+    }
 }
 
 void    Responder::_setIndex(void)
@@ -87,6 +109,7 @@ void    Responder::_setIndex(void)
         this->_indexPath = this->_rootPath;
         this->_indexPath += this->_location.getLocationPath();
         this->_indexPath += _indexs[i];
+        this->_indexPath = this->_trimPath(this->_indexPath);
         if (stat(this->_indexPath.c_str(), &_fstats) == 0)
         {
             if (S_ISDIR(_fstats.st_mode))
@@ -107,7 +130,6 @@ void    Responder::_setIndex(void)
 void    Responder::_prepareResponse(void)
 {
     struct stat _fstats;
-
     this->_inProgress = true;
     if (stat(this->_rootPath.c_str(), &_fstats) == 0)
     {
@@ -117,33 +139,27 @@ void    Responder::_prepareResponse(void)
             {
                 if (!this->_location.getCgiPath().empty())
                 {
-                    std::cout << _cgiResponse() << std::endl;
+                    this->_CGI = true;
                     this->_statusCode = "200";
                 }
                 else if (this->_location.getIndex().size() > 0)
                     this->_setIndex();
-                else if (this->_location.getAutoIndex())
-                    this->_statusCode = "200";
-                else
-                    this->_statusCode = "403";
             }
-            // else default
+            if (this->_location.getAutoIndex())
+                this->_statusCode = "200";
+            else
+                this->_statusCode = "403";
         }
         else
         {
             if (!this->_location.getLocationPath().empty() 
             && !this->_location.getCgiPath().empty())
-            {
-                std::cout << _cgiResponse() << std::endl;
-                this->_statusCode = "200";
-            }
-            else
-            {
-                std::cout << "RUN REQUEST" << std::endl;
-                this->_statusCode = "200";
-            }
+                this->_CGI = true;
+            this->_statusCode = "200";
         }
     }
+    else
+        this->_statusCode = "404";
 }
 
 std::string Responder::_getDateTime()
@@ -157,33 +173,10 @@ std::string Responder::_getDateTime()
 
 std::string Responder::_generateResponse(void)
 {
-    std::cout << "RESPONSE : \n";
-    std::cout << this->_indexPath << std::endl;
-    std::cout << "HTTP/1.1 " << this->_statusCode << " " << this->_getError(this->_statusCode) << "\r\n";
-    std::cout << "Server: webserv/1.0.0\r\n";
-    std::cout << "Date: "<< this->_getDateTime() <<"\r\n";
-    std::cout << "Content-Length: "<< "15220" <<"\r\n";
-    std::cout << "Connection: "<< "keep-alive" <<"\r\n";
-    int fd;
-    if (!this->_indexPath.empty())
-    {
-        fd = open(this->_indexPath.c_str(), O_RDONLY);
-        std::cout << "Content-Type: " << this->_getMimeType(this->_indexPath) << "\r\n\r\n";
-        int readLen = 0;
-        char x[1024];
-        while ((readLen = read(fd, x, 1024)) > 0)
-        {
-            x[readLen] = '\0';
-            std::cout << x;
-        }
-    }
-    else
-    {
-        fd = open(this->_rootPath.c_str(), O_RDONLY);
-        std::cout << "Content-Type: " << this->_getMimeType(".html") << "\r\n\r\n";
-        std::cout << this->_indexOfPage(this->_rootPath, this->_request.getPath());
-    }
-    return (_rootPath);
+    if (this->_CGI)
+        return (this->_cgiResponse());
+    else 
+        return (this->_staticResponse());
 }
 
 std::string Responder::_cgiResponse(void)
@@ -191,9 +184,43 @@ std::string Responder::_cgiResponse(void)
     return ("CGI EXECUTE");
 }
 
-std::string Responder::_getMethode(void) 
+std::string Responder::_staticResponse(void) 
 {
-    return ("GET");
+    std::stringstream _response;
+
+    _response << "HTTP/1.1 " << this->_statusCode << " " << this->_getError(this->_statusCode) << "\r\n";
+    _response << "Server: webserv/1.0.0\r\n";
+    _response << "Date: "<< this->_getDateTime() <<"\r\n";
+    _response << "Connection: "<< "keep-alive" <<"\r\n"; // ....
+    if (this->_statusCode.compare("200") != 0)
+    {
+        std::string _errBody = this->_generateErrorBody(this->_statusCode);
+        _response << "Content-Length: "<< _errBody.length() <<"\r\n";
+        _response << "Content-Type: " << this->_getMimeType(".html") << "\r\n\r\n";
+        _response << _errBody;
+    }
+    else if (!this->_indexPath.empty())
+    {
+        int fd = open(this->_indexPath.c_str(), O_RDONLY);
+        _response << "Content-Length: "<< _getFileLength(this->_indexPath) <<"\r\n";
+        _response << "Content-Type: " << this->_getMimeType(this->_indexPath) << "\r\n\r\n";
+        int readLen = 0;
+        char x[1024];
+        while ((readLen = read(fd, x, 1024)) > 0)
+        {
+            x[readLen] = '\0';
+            _response << x;
+        }
+        //\0 problem
+    }
+    else
+    {
+        std::string _indxBody = this->_indexOfPage(this->_rootPath, this->_request.getPath());
+        _response << "Content-Length: "<< _indxBody.length() <<"\r\n";
+        _response << "Content-Type: " << this->_getMimeType(".html") << "\r\n\r\n";
+        _response << _indxBody;
+    }
+    return (_response.str());
 }
 
 std::string Responder::_postMethode(void) 
@@ -293,7 +320,7 @@ size_t  Responder::_cmpath(std::string path, std::string cmval)
 bool Responder::_setLocation(std::string _reqPath, std::vector<location_parser> _locations)
 {
     size_t          _bestPath = 0;
-    std::vector<std::string> _indexs;
+    // std::vector<std::string> _indexs;
     // _loc.setLocationPath("");
     // _loc.setAutoIndex(true);
     // _loc.setCgiPath("");

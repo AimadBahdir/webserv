@@ -64,8 +64,6 @@ void printConfData(std::vector<server_parser> _srvs)
 
 int     main(int ac , char *av[])
 {
-
-
     if (ac == 2)
     {
         try
@@ -88,7 +86,7 @@ int     main(int ac , char *av[])
             headers["Accept-Language"] = "en-US,en;q=0.9";
 
             request_parser req;
-            req.setMethode("GET");
+            req.setMethode("POST");
             req.setPath("/");
             req.setQueries("");
             req.setVersion("HTTP/1.1");
@@ -99,7 +97,7 @@ int     main(int ac , char *av[])
             // std::cout << resp._indexOfPage("/", "/");
             // printConfData(conf->_servers);
             // std::cout << resp._generateResponse();
-            resp.response();
+            std::cout << resp.response();
 
             delete conf;
         }

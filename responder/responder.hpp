@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <sstream>
+#include <fstream>
 
 class Responder
 {
@@ -28,6 +29,7 @@ class Responder
         std::string        _rootPath;
         std::string        _indexPath;
         bool               _inProgress;
+        bool               _CGI;
 
         void            _prepareResponse(void);
         void            _setRootPath(void);
@@ -37,7 +39,7 @@ class Responder
         std::string     _getDateTime();
         std::string     _trimPath(std::string _path);
         std::string     _cgiResponse(void);
-        std::string     _getMethode(void);
+        std::string     _staticResponse(void);
         std::string     _postMethode(void);
         std::string     _deleteMethode(void);
         std::string     _uploadFile(void);
@@ -45,4 +47,5 @@ class Responder
         std::string     _getMimeType(std::string path);
         std::string     _getError(std::string errorCode);
         size_t          _cmpath(std::string path, std::string cmval);
+        size_t          _getFileLength(std::string _fpath);
 };
