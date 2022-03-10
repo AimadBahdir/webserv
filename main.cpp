@@ -86,8 +86,8 @@ int     main(int ac , char *av[])
             headers["Accept-Language"] = "en-US,en;q=0.9";
 
             request_parser req;
-            req.setMethode("POST");
-            req.setPath("/");
+            req.setMethode("GET");
+            req.setPath("/home");
             req.setQueries("");
             req.setVersion("HTTP/1.1");
             req.setHeaders(headers);

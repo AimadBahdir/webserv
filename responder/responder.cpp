@@ -6,7 +6,7 @@
     #define WEBDEFAULT "/goinfre/abahdir/webservConf"
 #endif
 
-Responder::Responder(request_parser req, server_parser serv) : _request(req), _server(serv), _statusCode("200"), _rootPath(WEBDEFAULT), _inProgress(false), _CGI(false)
+Responder::Responder(request_parser req, server_parser serv) : _request(req), _server(serv), _reqPath(req.getPath()), _statusCode("200"), _rootPath(WEBDEFAULT), _inProgress(false), _CGI(false)
 {
     struct stat _fstat;
     if (stat("./default", &_fstat) == 0 && S_ISDIR(_fstat.st_mode))
@@ -104,8 +104,8 @@ bool    Responder::_setIndex(std::string _index)
     struct stat _fstats;
 
     this->_indexPath = this->_rootPath;
-    this->_indexPath += this->_location.getLocationPath();
-    this->_indexPath += _index;
+    this->_indexPath += "/" + this->_location.getLocationPath();
+    this->_indexPath += "/" + _index;
     this->_indexPath = this->_trimPath(this->_indexPath);
     if (stat(this->_indexPath.c_str(), &_fstats) == 0)
     {
@@ -113,7 +113,7 @@ bool    Responder::_setIndex(std::string _index)
         {
             this->_rootPath = this->_trimPath(this->_rootPath + "/" + _index);
             this->_indexPath.clear();
-            if (this->_setLocation(this->_indexPath, this->_server._locations))
+            if (this->_setLocation(this->_trimPath(this->_request.getPath() + "/" + _index), this->_server._locations))
                 this->_prepareResponse();
         }
         this->_statusCode = "200";
@@ -198,11 +198,13 @@ std::string Responder::_cgiResponse(void)
 std::string Responder::_staticResponse(void) 
 {
     std::stringstream _response;
+    std::map<std::string, std::string> _headers = this->_request.getHeaders();
 
     _response << "HTTP/1.1 " << this->_statusCode << " " << this->_getError(this->_statusCode) << "\r\n";
     _response << "Server: webserv/1.0.0\r\n";
     _response << "Date: "<< this->_getDateTime() <<"\r\n";
-    _response << "Connection: "<< "keep-alive" <<"\r\n"; // ....
+    if (_headers.find("Connection") != _headers.end())
+        _response << "Connection: " << _headers.find("Connection")->second << "\r\n";
     if (this->_statusCode.compare("200") != 0)
     {
         std::string _errBody = this->_generateErrorBody(this->_statusCode);
@@ -212,6 +214,13 @@ std::string Responder::_staticResponse(void)
     }
     else if (!this->_indexPath.empty())
     {
+        struct stat _fstats;
+        stat(this->_indexPath.c_str(), &_fstats);
+        if ((_fstats.st_mode &  S_IRUSR) == 0)
+        {
+            this->_statusCode = "403";
+            return this->_staticResponse();
+        }
         int fd = open(this->_indexPath.c_str(), O_RDONLY);
         _response << "Content-Length: "<< _getFileLength(this->_indexPath) <<"\r\n";
         _response << "Content-Type: " << this->_getMimeType(this->_indexPath) << "\r\n\r\n";
@@ -226,7 +235,7 @@ std::string Responder::_staticResponse(void)
     }
     else
     {
-        std::string _indxBody = this->_indexOfPage(this->_rootPath, this->_request.getPath());
+        std::string _indxBody = this->_indexOfPage(this->_rootPath, this->_reqPath);
         _response << "Content-Length: "<< _indxBody.length() <<"\r\n";
         _response << "Content-Type: " << this->_getMimeType(".html") << "\r\n\r\n";
         _response << _indxBody;
@@ -263,13 +272,13 @@ std::string Responder::_indexOfPage(std::string _root, std::string _dir)
     _html << ".data span {font-size:12px}";
     _html << ".data {display:flex;justify-content:space-between;font-size:15px;background:#234;padding:.5rem;border-radius:.6rem;min-width:35rem;padding-left:2rem;margin:.2rem;}</style>";
     _html << "</head><body><h1>Index of "+_dir+"</h1><pre>";
-    if((dir  = opendir(std::string(_root+""+_dir).c_str())) != NULL)
+    if((dir  = opendir(std::string(_root).c_str())) != NULL)
     {
         while ((dirp = readdir(dir)) != NULL)
         {
             if (dirp->d_name[0] == '.' && dirp->d_name[1] != '.')
                 continue;
-            if (stat((_root+""+_dir+"/"+dirp->d_name).c_str(), &stats) == 0)
+            if (stat((this->_trimPath(_root+"/"+dirp->d_name)).c_str(), &stats) == 0)
             {
                 dt = *(gmtime(&stats.st_ctime));
                 if (std::string(dirp->d_name).compare("..") == 0)
@@ -328,9 +337,9 @@ size_t  Responder::_cmpath(std::string path, std::string cmval)
     return (res * (cmval[i] == '\0'));
 }
 
-bool Responder::_setLocation(std::string _reqPath, std::vector<location_parser> _locations)
+bool Responder::_setLocation(std::string _requestPath, std::vector<location_parser> _locations)
 {
-    size_t          _bestPath = 0;
+    size_t  _bestPath = 0;
     // std::vector<std::string> _indexs;
     // _loc.setLocationPath("");
     // _loc.setAutoIndex(true);
@@ -340,10 +349,10 @@ bool Responder::_setLocation(std::string _reqPath, std::vector<location_parser> 
     // _loc.setRootPath("/goinfre/abahdir/webserv");
     // _loc.setUploadPath("default");
     // _loc.setRedirection(std::make_pair("300", "/"));
-    _reqPath =  this->_trimPath(_reqPath);
+    this->_reqPath = this->_trimPath(_requestPath);
     for (size_t i = 0; i < _locations.size(); i++)
     {
-        size_t _cmp = this->_cmpath(_reqPath, this->_trimPath(_locations[i].getLocationPath()));
+        size_t _cmp = this->_cmpath(this->_reqPath, this->_trimPath(_locations[i].getLocationPath()));
         this->_location = (_cmp > _bestPath) ?  _locations[i] : this->_location;
         _bestPath = (_cmp > _bestPath) ? _cmp : _bestPath;
     }

@@ -25,6 +25,7 @@ class Responder
         request_parser     _request;
         server_parser      _server;
         location_parser    _location;
+        std::string        _reqPath;
         std::string        _statusCode;
         std::string        _rootPath;
         std::string        _indexPath;
