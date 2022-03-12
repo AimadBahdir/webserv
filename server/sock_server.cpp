@@ -6,25 +6,25 @@
 /*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:36 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/02/21 16:32:55 by wben-sai         ###   ########.fr       */
+/*   Updated: 2022/03/12 16:37:33 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "sock_server.hpp"
 
-sock_server::sock_server(std::vector<server> servers)
+sock_server::sock_server(std::vector<server_parser> servers)
 {
     int fd_sock;
-    for (std::vector<server>::iterator it = servers.begin(); it != servers.end(); it++)
+    for (std::vector<server_parser>::iterator it = servers.begin(); it != servers.end(); it++)
     {
         fd_sock = _create_socket(*it);
-        _bind(fd_sock, it->port, it->host);
+        _bind(fd_sock, it->getPort(), it->getHost());
         _listen(fd_sock);
     }
     ManagementFDs();
 }
 
-int sock_server::_create_socket(server srv)
+int sock_server::_create_socket(server_parser srv)
 {
     /* ----------------------------------------------------------------------------------------
     int sockId = socket(domain, type, protocol) 
@@ -51,7 +51,7 @@ int sock_server::_create_socket(server srv)
     else
     {
         FD_SET(fd_sock, &FDs_readability);
-        M_FSRR.insert(std::make_pair(fd_sock, SRR("server_socket", srv)));
+        M_FSRR.insert(std::make_pair(fd_sock, SRR("server_socket", srv, "")));
         std::cout << "socket ID = " << fd_sock << std::endl;
     }
     return (fd_sock);
@@ -89,12 +89,10 @@ void sock_server::_bind(int fd_sock ,size_t port, std::string host)
 void sock_server::_listen(int fd_sock)
 {
     /* ----------------------------------------------------------------------------------------
-    int accept(int sockfd, struct sockaddr *restrict addr, socklen_t *restrict addrlen);
+    int listen(int sockfd, int backlog);
         sockfd : the socket descriptor
-        addr : where the address of the connecting socket shall be return
-        addrlen : sizeof (addr)
-        -- Note : accept() is blocking : wait for connection before returning
-        -- Note : listen() is used by the server only as a way to get new sockets.
+        backlog : length to which the queue of pending connections for sockfd
+        -- Note : listen() is non-blocking : return immediately.
     ---------------------------------------------------------------------------------------- */
     
     if (listen(fd_sock, 1) == 0)
@@ -106,9 +104,17 @@ void sock_server::_listen(int fd_sock)
     }
 }
 
-void sock_server::_accept(int fd_sock, server srv)
+void sock_server::_accept(int fd_sock, server_parser srv)
 {
-    // 6 - accept the connection request
+    /* ----------------------------------------------------------------------------------------
+    int accept(int sockfd, struct sockaddr *restrict addr, socklen_t *restrict addrlen);
+        sockfd : the socket descriptor
+        addr : where the address of the connecting socket shall be return
+        addrlen : sizeof (addr)
+        -- Note : accept() is blocking : wait for connection before returning
+        -- Note : listen() is used by the server only as a way to get new sockets.
+    ---------------------------------------------------------------------------------------- */
+    
     int connectionServerSockFD = accept(fd_sock, NULL, 0);
     //fcntl(new_fd, F_SETFL, O_NONBLOCK); /* Change the socket into non-blocking state	*/
     if(connectionServerSockFD == -1) 
@@ -120,13 +126,14 @@ void sock_server::_accept(int fd_sock, server srv)
     {
         std::cout << "Client with Id " << connectionServerSockFD << " is connect" << std::endl; 
         FD_SET(connectionServerSockFD, &FDs_readability);
-        M_FSRR.insert(std::make_pair(connectionServerSockFD, SRR("connection_socket",srv)));
+        std::string file_name = std::to_string(std::time(nullptr)) + "_" + std::to_string(connectionServerSockFD);
+        M_FSRR.insert(std::make_pair(connectionServerSockFD, SRR("connection_socket",srv, file_name)));
     }
 }
 
 void sock_server::_recv(int connectionServerSockFD)
 {
-    char buf[1024];
+    char buf[10240];
     ssize_t lenString = recv(connectionServerSockFD, buf, (sizeof(buf)), 0);
     buf[lenString] = '\0';
     if(lenString == 0)
@@ -137,9 +144,13 @@ void sock_server::_recv(int connectionServerSockFD)
     }
     else
     {
-        //std::string res = buf;
-        //FD_MAP[FDs] = FD_MAP[FDs] + " " + buf;
-        send(connectionServerSockFD, "alothhhna", 9, 0);
+
+        
+        //std::map<int, SRR>::iterator it = M_FSRR.find(connectionServerSockFD);
+        
+        //std::string res = buf
+        std::string rr = "HTTP/1.1 200 OK\r\nContent-length:9\r\n\r\nalothhhna";
+        send(connectionServerSockFD, rr.c_str() , rr.length(), 0);
         std::cout << "buf = " << buf << std::endl; 
         memset(buf, 0, sizeof(buf));  
         //for (std::map<int , std::string>::iterator i = FD_MAP.begin(); i != FD_MAP.end(); i++)
@@ -170,13 +181,18 @@ void sock_server::ManagementFDs()
         {
             for (std::map<int, SRR>::iterator it = M_FSRR.begin(); it != M_FSRR.end(); it++)
             {
-                if (FD_ISSET(it->first , &FDs_readability_copy))
+                if (FD_ISSET(it->first , &FDs_readability_copy)) 
                 {
                     if((it->second).get_type_sock() == "server_socket")
                         _accept(it->first, ((it->second).get_server()));
                     else 
                        _recv(it->first);
-                }   
+                }
+                else if (FD_ISSET(it->first , &FDs_readability_copy))
+                {
+                    
+                }
+                
             }
         }
     }

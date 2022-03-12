@@ -6,7 +6,7 @@
 /*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:52 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/02/21 16:26:03 by wben-sai         ###   ########.fr       */
+/*   Updated: 2022/03/12 16:41:01 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,54 +18,41 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <ctime>
 #include <map>
 #include <vector>
-
-//----------------------------------------------------------------
-
-struct location
-{
-    std::vector<std::string> accepted_requests;
-    std::string location_path;
-    std::string root_path;
-    std::vector<std::string> index;
-    std::string upload_path;
-    std::string cgi_path;
-    std::pair<int, std::string> redirection;
-    bool auto_index;
-};
-
-struct server
-{
-    std::string host;
-    size_t port;
-    std::vector<std::string> names;
-    std::vector<std::string> error_pages;
-    std::vector<location> locations;
-    int clientMaxBodySize;
-};
-
-//----------------------------------------------------------------
+#include "../parser/parser.hpp"
+#include "../parser/request_parser.hpp"
 
 // class server - request - response
 class SRR 
 {
     private:
         std::string _type_sock;
-        server _server;
-        std::string _request;
+        server_parser _server;
+        request_parser *_request;
         std::string _response;
     public:
         SRR(){};
-        SRR(std::string _type_sock, server _server)
+        SRR(std::string _type_sock, server_parser _server, std::string _filename)
         {
             this->_type_sock = _type_sock;
             this->_server = _server;
+            if(!_filename.empty())
+                _request = new request_parser("/tmp/" + _filename);
+            
         };
         std::string get_type_sock(){return _type_sock;}
-        server get_server(){return _server;}
+        server_parser get_server(){return _server;}
         //std::string get_request(){return _request;}
         //std::string get_response(){return server;}
+        
+
+        
+        
+        
+        
+        
 };
 
 class sock_server
@@ -76,15 +63,15 @@ class sock_server
         
         std::map<int, SRR> M_FSRR; 
         
-        int  _create_socket(server srv);
+        int  _create_socket(server_parser srv);
         void _bind(int fd_sock ,size_t port, std::string host);
         void _listen(int fd_sock);
         int  _select();
-        void _accept(int fd_sock, server srv);
+        void _accept(int fd_sock, server_parser srv);
         void _recv(int connectionServerSockFD);
         void ManagementFDs();
     public:
-        sock_server(std::vector<server> servers);
+        sock_server(std::vector<server_parser> servers);
         ~sock_server();
         
 };
