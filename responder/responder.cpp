@@ -204,14 +204,20 @@ std::string Responder::_toUpper(const char* _str)
 {
     std::string _newStr;
     for(size_t i = 0; i < strlen(_str); i++)
-        _newStr += std::toupper(_str[i]);
+    {
+        if(_str[i] == '-')
+            _newStr += '_';
+        else
+            _newStr += std::toupper(_str[i]);
+    }
     return (_newStr);
 }
 
 char**  Responder::_EnvarCGI()
 {
     std::map<std::string, std::string> _headers = this->_request.getHeaders();
-    char** _envars = (char**)malloc((_headers.size() + 10) * sizeof(char *));
+    char** _envars = (char**)malloc((_headers.size() + 8) * sizeof(char *));
+    _envars[_headers.size() + 7] = NULL;
     std::map<std::string, std::string>::iterator _it;
     size_t i = 0;
 
@@ -234,15 +240,16 @@ char**  Responder::_EnvarCGI()
         _envars[i++] = strdup(std::string("SCRIPT_NAME="+this->_rootPath.substr(this->_rootPath.find_last_of("/") + 1)).c_str());
     }
     _envars[i++] = strdup("SERVER_SOFTWARE=webserv/1.0.0");
+    _envars[i++] = strdup("REDIRECT_STATUS=200");
     for (_it = _headers.begin(); _it != _headers.end(); _it++)
     {
-        if (std::string("CONTENT-TYPE").compare(this->_toUpper(_it->first.c_str())) == 0)
+        if (std::string("CONTENT_TYPE").compare(this->_toUpper(_it->first.c_str())) == 0)
             _envars[i++] = strdup(std::string("CONTENT_TYPE="+_it->second).c_str());
-        else if (std::string("CONTENT-LENGTH").compare(this->_toUpper(_it->first.c_str())) == 0)
+        else if (std::string("CONTENT_LENGTH").compare(this->_toUpper(_it->first.c_str())) == 0)
             _envars[i++] = strdup(std::string("CONTENT_LENGTH="+_it->second).c_str());
         else if (std::string("COOKIE").compare(this->_toUpper(_it->first.c_str())) == 0)
             _envars[i++] = strdup(std::string("HTTP_COOKIE="+_it->second).c_str());
-        else if (std::string("USER-AGENT").compare(this->_toUpper(_it->first.c_str())) == 0)
+        else if (std::string("USER_AGENT").compare(this->_toUpper(_it->first.c_str())) == 0)
             _envars[i++] = strdup(std::string("HTTP_USER_AGENT="+_it->second).c_str());
         else
             _envars[i++] = strdup(std::string("HTTP_"+this->_toUpper(_it->first.c_str())+"="+_it->second).c_str());
@@ -252,19 +259,30 @@ char**  Responder::_EnvarCGI()
 
 std::string Responder::_cgiResponse(void)
 {
-    char **s = _EnvarCGI();
+    int _pid;
+    char** _cmd = (char **)malloc(3 * sizeof(char*));
 
-    std::cout << s[0] << std::endl;
-    std::cout << s[1] << std::endl;
-    std::cout << s[2] << std::endl;
-    std::cout << s[3] << std::endl;
-    std::cout << s[4] << std::endl;
-    std::cout << s[5] << std::endl;
-    std::cout << s[6] << std::endl;
-    std::cout << s[7] << std::endl;
-    std::cout << s[8] << std::endl;
-    std::cout << s[9] << std::endl;
-    std::cout << s[10] << std::endl;
+    if (this->_indexPath.empty())
+        this->_indexPath = this->_rootPath;
+    _cmd[0] = strdup(this->_location.getCgiPath().c_str());
+    _cmd[1] = strdup(this->_indexPath.c_str());
+    _cmd[2] = NULL;
+    if ((_pid = fork()) == -1)
+        this->_statusCode = "500";
+    else if (_pid == 0)
+    {
+        if(execve(*_cmd, _cmd, _EnvarCGI()) == -1)
+        {
+            this->_statusCode = "500";
+            exit(errno);
+        }
+    }
+    else
+    {
+        waitpid(_pid, 0, 0);
+        return (">>> ");
+    }
+
     return ("CGI EXECUTE");
 }
 
