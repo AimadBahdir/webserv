@@ -6,7 +6,7 @@
 /*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:52 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/03/12 16:41:01 by wben-sai         ###   ########.fr       */
+/*   Updated: 2022/03/13 14:47:16 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,24 +33,22 @@ class SRR
         request_parser *_request;
         std::string _response;
     public:
+        int _number_request;
         SRR(){};
         SRR(std::string _type_sock, server_parser _server, std::string _filename)
         {
             this->_type_sock = _type_sock;
             this->_server = _server;
+            this->_number_request = 0;
             if(!_filename.empty())
                 _request = new request_parser("/tmp/" + _filename);
             
-        };
+        }
         std::string get_type_sock(){return _type_sock;}
         server_parser get_server(){return _server;}
-        //std::string get_request(){return _request;}
+        request_parser *get_request_parser(){return _request;}
+        void set_request_parser(request_parser *_request){this->_request = _request;}
         //std::string get_response(){return server;}
-        
-
-        
-        
-        
         
         
 };
@@ -61,7 +59,7 @@ class sock_server
         fd_set FDs_readability, FDs_writability;
         fd_set FDs_readability_copy, FDs_writability_copy;
         
-        std::map<int, SRR> M_FSRR; 
+        std::map<int, SRR *> M_FSRR; 
         
         int  _create_socket(server_parser srv);
         void _bind(int fd_sock ,size_t port, std::string host);
@@ -69,6 +67,7 @@ class sock_server
         int  _select();
         void _accept(int fd_sock, server_parser srv);
         void _recv(int connectionServerSockFD);
+        void _send(int connectionServerSockFD, server_parser srv);
         void ManagementFDs();
     public:
         sock_server(std::vector<server_parser> servers);
