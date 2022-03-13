@@ -1,5 +1,5 @@
 NAME = webserv
-SRC = main.cpp responder/responder.cpp ../parser/utils.cpp ../parser/parser.cpp ../parser/server_parser.cpp ../parser/location_parser.cpp
+SRC = main.cpp responder/responder.cpp ../parser/utils.cpp ../parser/parser.cpp ../parser/server_parser.cpp ../parser/location_parser.cpp ../parser/request_parser.cpp
 FLAGS = -Wall -Wextra -Werror -std=c++98 -fsanitize=address -g
 
 all: $(NAME)

@@ -6,7 +6,7 @@
     #define WEBDEFAULT "/goinfre/abahdir/webservConf"
 #endif
 
-Responder::Responder(request_parser req, server_parser serv) : _request(req), _server(serv), _reqPath(req.getPath()), _statusCode("200"), _rootPath(WEBDEFAULT), _inProgress(false), _CGI(false)
+Responder::Responder(request_parser req, server_parser serv) : _request(req), _server(serv), _reqPath(req.getPath()), _statusCode("200"), _rootPath(WEBDEFAULT), _inProgress(false), _UPLOAD(false), _CGI(false)
 {
     struct stat _fstat;
     if (stat("./default", &_fstat) == 0 && S_ISDIR(_fstat.st_mode))
@@ -37,7 +37,7 @@ bool    Responder::_errorsChecker(void)
         this->_statusCode = "405";
         return false;
     }
-    if (this->_request.getVersion().compare("HTTP/1.1") != 0)
+    if (this->_request.getVersion().compare("1.1") != 0)
     {
         this->_statusCode = "505";
         return false;
@@ -109,13 +109,10 @@ bool    Responder::_setIndex(std::string _index)
     this->_indexPath = this->_trimPath(this->_indexPath);
     if (stat(this->_indexPath.c_str(), &_fstats) == 0)
     {
-        if (S_ISDIR(_fstats.st_mode))
-        {
-            this->_rootPath = this->_trimPath(this->_rootPath + "/" + _index);
-            this->_indexPath.clear();
-            if (this->_setLocation(this->_trimPath(this->_request.getPath() + "/" + _index), this->_server._locations))
-                this->_prepareResponse();
-        }
+        this->_rootPath = this->_trimPath(this->_rootPath + "/" + _index);
+        this->_indexPath.clear();
+        if (this->_setLocation(this->_trimPath(this->_request.getPath() + "/" + _index), this->_server._locations))
+            this->_prepareResponse();
         this->_statusCode = "200";
         return true;
     }
@@ -148,7 +145,13 @@ void    Responder::_prepareResponse(void)
         {
             if (!this->_location.getLocationPath().empty())
             {
-                if (!this->_location.getCgiPath().empty())
+                if (!this->_location.getUploadPath().empty()
+                && this->_request.getMethode().compare("POST") == 0)
+                {
+                    this->_UPLOAD = true;
+                    this->_statusCode = "200";
+                }
+                else if (!this->_location.getCgiPath().empty())
                 {
                     this->_CGI = true;
                     this->_statusCode = "200";
@@ -163,9 +166,14 @@ void    Responder::_prepareResponse(void)
         }
         else
         {
-            if (!this->_location.getLocationPath().empty() 
-            && !this->_location.getCgiPath().empty())
-                this->_CGI = true;
+            if (!this->_location.getLocationPath().empty())
+            {
+                if (!this->_location.getUploadPath().empty()
+                && this->_request.getMethode().compare("POST") == 0)
+                    this->_UPLOAD = true;
+                else if(!this->_location.getCgiPath().empty())
+                    this->_CGI = true;
+            }
             this->_statusCode = "200";
         }
     }
@@ -184,14 +192,79 @@ std::string Responder::_getDateTime()
 
 std::string Responder::_generateResponse(void)
 {
-    if (this->_CGI)
+    if (this->_UPLOAD)
+        return (this->_uploadFile());
+    else if (this->_CGI)
         return (this->_cgiResponse());
     else 
         return (this->_staticResponse());
 }
 
+std::string Responder::_toUpper(const char* _str)
+{
+    std::string _newStr;
+    for(size_t i = 0; i < strlen(_str); i++)
+        _newStr += std::toupper(_str[i]);
+    return (_newStr);
+}
+
+char**  Responder::_EnvarCGI()
+{
+    std::map<std::string, std::string> _headers = this->_request.getHeaders();
+    char** _envars = (char**)malloc((_headers.size() + 10) * sizeof(char *));
+    std::map<std::string, std::string>::iterator _it;
+    size_t i = 0;
+
+    _envars[i++] = strdup(std::string("REQUEST_METHOD="+this->_request.getMethode()).c_str());
+    _envars[i++] = strdup(std::string("QUERY_STRING="+this->_request.getQueries()).c_str());
+    std::vector<std::string> _srvNames = this->_server.getNames();
+    if (_srvNames.size() > 0)
+        _envars[i++] = strdup(std::string("SERVER_NAME="+_srvNames[0]).c_str());
+    else
+        _envars[i++] = strdup("SERVER_NAME=127.0.0.1");
+
+    if  (!this->_indexPath.empty())
+    {
+        _envars[i++] = strdup(std::string("SCRIPT_FILENAME="+this->_indexPath).c_str());
+        _envars[i++] = strdup(std::string("SCRIPT_NAME="+this->_indexPath.substr(this->_indexPath.find_last_of("/") + 1)).c_str());
+    }
+    else
+    {
+        _envars[i++] = strdup(std::string("SCRIPT_FILENAME="+this->_rootPath).c_str());
+        _envars[i++] = strdup(std::string("SCRIPT_NAME="+this->_rootPath.substr(this->_rootPath.find_last_of("/") + 1)).c_str());
+    }
+    _envars[i++] = strdup("SERVER_SOFTWARE=webserv/1.0.0");
+    for (_it = _headers.begin(); _it != _headers.end(); _it++)
+    {
+        if (std::string("CONTENT-TYPE").compare(this->_toUpper(_it->first.c_str())) == 0)
+            _envars[i++] = strdup(std::string("CONTENT_TYPE="+_it->second).c_str());
+        else if (std::string("CONTENT-LENGTH").compare(this->_toUpper(_it->first.c_str())) == 0)
+            _envars[i++] = strdup(std::string("CONTENT_LENGTH="+_it->second).c_str());
+        else if (std::string("COOKIE").compare(this->_toUpper(_it->first.c_str())) == 0)
+            _envars[i++] = strdup(std::string("HTTP_COOKIE="+_it->second).c_str());
+        else if (std::string("USER-AGENT").compare(this->_toUpper(_it->first.c_str())) == 0)
+            _envars[i++] = strdup(std::string("HTTP_USER_AGENT="+_it->second).c_str());
+        else
+            _envars[i++] = strdup(std::string("HTTP_"+this->_toUpper(_it->first.c_str())+"="+_it->second).c_str());
+    }
+    return (_envars);
+}
+
 std::string Responder::_cgiResponse(void)
 {
+    char **s = _EnvarCGI();
+
+    std::cout << s[0] << std::endl;
+    std::cout << s[1] << std::endl;
+    std::cout << s[2] << std::endl;
+    std::cout << s[3] << std::endl;
+    std::cout << s[4] << std::endl;
+    std::cout << s[5] << std::endl;
+    std::cout << s[6] << std::endl;
+    std::cout << s[7] << std::endl;
+    std::cout << s[8] << std::endl;
+    std::cout << s[9] << std::endl;
+    std::cout << s[10] << std::endl;
     return ("CGI EXECUTE");
 }
 
@@ -255,7 +328,7 @@ std::string Responder::_deleteMethode(void)
 
 std::string Responder::_uploadFile(void) 
 {
-    return ("Res");
+    return ("UPLOAD FILE");
 }
 
 std::string Responder::_indexOfPage(std::string _root, std::string _dir)
@@ -340,15 +413,6 @@ size_t  Responder::_cmpath(std::string path, std::string cmval)
 bool Responder::_setLocation(std::string _requestPath, std::vector<location_parser> _locations)
 {
     size_t  _bestPath = 0;
-    // std::vector<std::string> _indexs;
-    // _loc.setLocationPath("");
-    // _loc.setAutoIndex(true);
-    // _loc.setCgiPath("");
-    // _indexs.push_back("index.html");
-    // _loc.setIndexs(_indexs);
-    // _loc.setRootPath("/goinfre/abahdir/webserv");
-    // _loc.setUploadPath("default");
-    // _loc.setRedirection(std::make_pair("300", "/"));
     this->_reqPath = this->_trimPath(_requestPath);
     for (size_t i = 0; i < _locations.size(); i++)
     {

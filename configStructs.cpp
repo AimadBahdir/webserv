@@ -65,28 +65,28 @@
 
 // };
 
-class request_parser
-{
-    private:
-        std::string                         methode;
-        std::string                         path;
-        std::string                         queries;
-        std::string                         version;
-        std::map<std::string, std::string>  headers;
-        std::string                         bodyFile;
+// class request_parser
+// {
+//     private:
+//         std::string                         methode;
+//         std::string                         path;
+//         std::string                         queries;
+//         std::string                         version;
+//         std::map<std::string, std::string>  headers;
+//         std::string                         bodyFile;
 
-    public:
-        std::string                         getMethode() { return methode; }
-        std::string                         getPath() { return path; }
-        std::string                         getQueries() { return queries; }
-        std::string                         getVersion() { return version; }
-        std::map<std::string, std::string>  getHeaders() { return headers; }
-        std::string                         getBodyFile() { return bodyFile; }
+//     public:
+//         std::string                         getMethode() { return methode; }
+//         std::string                         getPath() { return path; }
+//         std::string                         getQueries() { return queries; }
+//         std::string                         getVersion() { return version; }
+//         std::map<std::string, std::string>  getHeaders() { return headers; }
+//         std::string                         getBodyFile() { return bodyFile; }
 
-        void                                setMethode(std::string methode) {  this->methode = methode; }
-        void                                setPath(std::string path) {  this->path = path; }
-        void                                setQueries(std::string queries) {  this->queries = queries; }
-        void                                setVersion(std::string version) {  this->version = version; }
-        void                                setHeaders(std::map<std::string, std::string> headers) {  this->headers = headers; }
-        void                                setBodyFile(std::string bodyFile) {  this->bodyFile = bodyFile; }
-};
+//         void                                setMethode(std::string methode) {  this->methode = methode; }
+//         void                                setPath(std::string path) {  this->path = path; }
+//         void                                setQueries(std::string queries) {  this->queries = queries; }
+//         void                                setVersion(std::string version) {  this->version = version; }
+//         void                                setHeaders(std::map<std::string, std::string> headers) {  this->headers = headers; }
+//         void                                setBodyFile(std::string bodyFile) {  this->bodyFile = bodyFile; }
+// };

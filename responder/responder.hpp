@@ -2,6 +2,7 @@
 #pragma once
 #include "../configStructs.cpp"
 #include "../../parser/server_parser.hpp"
+#include "../../parser/request_parser.hpp"
 #include "../../parser/location_parser.hpp"
 #include <algorithm>
 #include <dirent.h>
@@ -30,6 +31,7 @@ class Responder
         std::string        _rootPath;
         std::string        _indexPath;
         bool               _inProgress;
+        bool               _UPLOAD;
         bool               _CGI;
 
         void            _prepareResponse(void);
@@ -38,6 +40,8 @@ class Responder
         bool            _setIndex(std::string _index);
         bool            _setLocation(std::string _reqPath, std::vector<location_parser> _locations);
         bool            _errorsChecker(void);
+        char**          _EnvarCGI();
+        std::string     _toUpper(const char* _str);
         std::string     _getDateTime();
         std::string     _trimPath(std::string _path);
         std::string     _cgiResponse(void);

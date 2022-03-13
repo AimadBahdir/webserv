@@ -4,6 +4,7 @@
 #include "./responder/responder.hpp"
 // #include "./responder/response.hpp"
 #include "../parser/parser.hpp"
+#include "../parser/request_parser.hpp"
 
 
 #include <unistd.h>
@@ -69,36 +70,53 @@ int     main(int ac , char *av[])
         try
         {
             parser *conf = new parser(av[1]);
-            std::map<std::string, std::string> headers;
+            // std::map<std::string, std::string> headers;
 
-            headers["Host"] = "127.0.0.1";
-            headers["Port"] = "8000";
-            headers["Connection"] = "keep-alive";
-            headers["Cache-Control"] = "max-age=0";
-            headers["Upgrade-Insecure-Requests"] = "1";
-            headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML] = like Gecko) Chrome/89.0.4389.114 Safari/537.36";
-            headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9";
-            headers["Sec-Fetch-Site"] = "cross-site";
-            headers["Sec-Fetch-Mode"] = "navigate";
-            headers["Sec-Fetch-User"] = "?1";
-            headers["Sec-Fetch-Dest"] = "document";
-            headers["Accept-Encoding"] = "gzip, deflate, br";
-            headers["Accept-Language"] = "en-US,en;q=0.9";
+            // headers["Host"] = "127.0.0.1";
+            // headers["Port"] = "8000";
+            // headers["Connection"] = "keep-alive";
+            // headers["Cache-Control"] = "max-age=0";
+            // headers["Upgrade-Insecure-Requests"] = "1";
+            // headers["User-Agent"] = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML] = like Gecko) Chrome/89.0.4389.114 Safari/537.36";
+            // headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9";
+            // headers["Sec-Fetch-Site"] = "cross-site";
+            // headers["Sec-Fetch-Mode"] = "navigate";
+            // headers["Sec-Fetch-User"] = "?1";
+            // headers["Sec-Fetch-Dest"] = "document";
+            // headers["Accept-Encoding"] = "gzip, deflate, br";
+            // headers["Accept-Language"] = "en-US,en;q=0.9";
 
-            request_parser req;
-            req.setMethode("GET");
-            req.setPath("/home");
-            req.setQueries("");
-            req.setVersion("HTTP/1.1");
-            req.setHeaders(headers);
-            req.setBodyFile("./Makefile");
+            // request_parser req;
+            // req.setMethode("GET");
+            // req.setPath("/home");
+            // req.setQueries("");
+            // req.setVersion("HTTP/1.1");
+            // req.setHeaders(headers);
+            // req.setBodyFile("./Makefile");
 
-            Responder resp(req, conf->_servers[0]);
+            request_parser obj("body");
+
+            int readLen;
+            int fd = open("./request.test", O_RDONLY);
+            char x[15];
+            int allLen = 0;
+            while ((readLen = read(fd, x, 14)) > 0)
+            {
+                x[readLen] = '\0';
+                allLen += readLen;
+                if (!obj.getStatus())
+                    obj.sendLine(x);
+            }
+            std::cout << obj.getMethode() << std::endl;
+            std::cout << obj.getVersion() << std::endl;
+
+            Responder resp(obj, conf->_servers[0]);
+
+
             // std::cout << resp._indexOfPage("/", "/");
             // printConfData(conf->_servers);
             // std::cout << resp._generateResponse();
             std::cout << resp.response();
-
             delete conf;
         }
         catch(const char *str)
