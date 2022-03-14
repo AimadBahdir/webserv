@@ -6,7 +6,7 @@
 /*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:36 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/03/14 12:49:36 by wben-sai         ###   ########.fr       */
+/*   Updated: 2022/03/14 16:30:13 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -158,7 +158,7 @@ void sock_server::_recv(int connectionServerSockFD)
             }
         }
         catch(const char *str) {
-            std::cout << str << std::endl;
+            //std::cout << str << std::endl;
         }
         //std::string res = buf
         //std::string rr = "HTTP/1.1 200 OK\r\nContent-length:9\r\n\r\nalothhhna";
@@ -175,36 +175,53 @@ void sock_server::_send(int connectionServerSockFD, server_parser srv)
     (void)srv;
 
     SRR *srr = (M_FSRR.find(connectionServerSockFD))->second; 
-    std::pair<std::string, std::string> paiir("HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 68\nConnection: keep-alive\nCache-Control: max-age=0\nUpgrade-Insecure-Requests: 1\nCookie: PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1\nUser-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML] = like Gecko) Chrome/89.0.4389.114 Safari/537.36\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9\nSec-Fetch-Site: cross-site\nSec-Fetch-Mode: navigate\nSec-Fetch-User: ?1\nSec-Fetch-Dest: document\nAccept-Encoding: gzip, deflate, br\nAccept-Language: en-US,en;q=0.9", "/Users/wben-sai/Desktop/webser3/server/response");
+    std::pair<std::string, std::string> paiir("HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 68\nConnection: keep-alive\nCache-Control: max-age=0\nUpgrade-Insecure-Requests: 1\nCookie: PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1\nUser-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML] = like Gecko) Chrome/89.0.4389.114 Safari/537.36\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9\nSec-Fetch-Site: cross-site\nSec-Fetch-Mode: navigate\nSec-Fetch-User: ?1\nSec-Fetch-Dest: document\nAccept-Encoding: gzip, deflate, br\nAccept-Language: en-US,en;q=0.9\n", "/Users/wben-sai/Desktop/webser3/server/response");
     
-    if(!srr->is_open_file_response)
-    {
+    
+    std::string res;
+    if(srr->FileLength == 0)
+    {   
+        srr->FileLength = srr->_getFileLength(paiir.second);
         srr->file_response = open(paiir.second.c_str(), O_RDONLY);
-        srr->is_open_file_response = true;
+        res = paiir.first;
     }
         
     char buf[10240];
-    ssize_t lenString = recv(srr->file_response, buf, (sizeof(buf)), 0);
-    buf[lenString] = '\0';
-    
-    std::string rr = "HTTP/1.1 200 OK\r\nContent-length:9\r\n\r\nalothhhna";
-    send(connectionServerSockFD, rr.c_str() , rr.length(), 0);
-
-
-    
-    FD_SET(connectionServerSockFD, &FDs_readability);
-    FD_CLR(connectionServerSockFD, &FDs_writability);
-    std::map<std::string, std::string>::iterator it = (srr->get_request_parser()->getHeaders()).find("Connection");
-    if(it != (srr->get_request_parser()->getHeaders()).end() && it->second == "Close")
+    int len_read = read(srr->file_response, buf, (sizeof(buf)));
+    if(len_read != -1)
     {
-        FD_CLR(connectionServerSockFD, &FDs_readability);
-        close(connectionServerSockFD);
+        buf[len_read] = '\0';
+        srr->Length_read += len_read;
     }
-    srr->_number_request++;
-    std::string file_name = std::to_string(std::time(nullptr)) + "_" + std::to_string(connectionServerSockFD)+ "_" + std::to_string(srr->_number_request);
-    delete srr->get_request_parser();
-    //srr->get_request_parser()->removeFile();
-    srr->set_request_parser(new request_parser("/tmp/" + file_name));
+    else
+        exit(0);
+    
+    
+    res += buf;
+    
+    std::cout <<"res = "<< res << std::endl;
+    
+    send(connectionServerSockFD, res.c_str() , res.length(), 0);
+
+    if(srr->Length_read == srr->FileLength)
+    {
+        srr->Length_read = 0;
+        srr->FileLength = 0;
+        close(srr->file_response);
+        FD_SET(connectionServerSockFD, &FDs_readability);
+        FD_CLR(connectionServerSockFD, &FDs_writability);
+        std::map<std::string, std::string>::iterator it = (srr->get_request_parser()->getHeaders()).find("Connection");
+        if(it != (srr->get_request_parser()->getHeaders()).end() && it->second == "Close")
+        {
+            FD_CLR(connectionServerSockFD, &FDs_readability);
+            close(connectionServerSockFD);
+        }
+        srr->_number_request++;
+        std::string file_name = std::to_string(std::time(nullptr)) + "_" + std::to_string(connectionServerSockFD)+ "_" + std::to_string(srr->_number_request);
+        delete srr->get_request_parser();
+        //srr->get_request_parser()->removeFile();
+        srr->set_request_parser(new request_parser("/tmp/" + file_name));
+    }
 }
 
 int sock_server::_select()
@@ -232,10 +249,12 @@ void sock_server::ManagementFDs()
             {
                 if (FD_ISSET(it->first , &FDs_writability_copy))
                 {
+                    std::cout <<"2222" << std::endl;
                     _send(it->first, (it->second)->get_server());
                 }
                 else if (FD_ISSET(it->first , &FDs_readability_copy)) 
                 {
+                    std::cout <<"111111" << std::endl;
                     if((it->second)->get_type_sock() == "server_socket")
                         _accept(it->first, ((it->second)->get_server()));
                     else 
