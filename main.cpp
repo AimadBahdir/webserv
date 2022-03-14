@@ -112,11 +112,11 @@ int     main(int ac , char *av[])
 
             Responder resp(obj, conf->_servers[0]);
 
-
             // std::cout << resp._indexOfPage("/", "/");
             // printConfData(conf->_servers);
             // std::cout << resp._generateResponse();
-            std::cout << resp.response().first;
+            std::cout << "HEADERS: " << resp.response().first << std::endl;
+            std::cout << "BODY: " << resp.response().second << std::endl;
             delete conf;
         }
         catch(const char *str)

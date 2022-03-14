@@ -338,41 +338,36 @@ Responder::RESPONSE_DATA Responder::_staticResponse(void)
     
     if (this->_statusCode.compare("200") != 0)
     {
-        std::string _errBody = this->_generateErrorBody(this->_statusCode);
-        _response << _generateHeaders();
-        _response << "Content-Length: "<< _errBody.length() <<"\r\n";
-        _response << "Content-Type: " << this->_getMimeType(".html") << "\r\n\r\n";
-        _response << _errBody;
+        std::string _path = this->_generateErrorBody(this->_statusCode);
+        return (std::make_pair(std::string(_generateHeaders(_path)+"\r\n"), _path));
     }
     else if (!this->_indexPath.empty())
     {
-        struct stat _fstats;
-        stat(this->_indexPath.c_str(), &_fstats);
-        if ((_fstats.st_mode &  S_IRUSR) == 0)
-        {
-            this->_statusCode = "403";
-            return this->_staticResponse();
-        }
-        int fd = open(this->_indexPath.c_str(), O_RDONLY);
-        _response << _generateHeaders(this->_indexPath);
-        int readLen = 0;
-        char x[1024];
-        while ((readLen = read(fd, x, 1024)) > 0)
-        {
-            x[readLen] = '\0';
-            _response << x;
-        }
+        // struct stat _fstats;
+        // stat(this->_indexPath.c_str(), &_fstats);
+        // if ((_fstats.st_mode &  S_IRUSR) == 0)
+        // {
+        //     this->_statusCode = "403";
+        //     return this->_staticResponse();
+        // }
+        // int fd = open(this->_indexPath.c_str(), O_RDONLY);
+        // _response << _generateHeaders(this->_indexPath);
+        // std::string _path = this->_generateErrorBody(this->_statusCode);
+        return (std::make_pair(std::string(_generateHeaders(this->_indexPath)+"\r\n"), this->_indexPath));
+        // int readLen = 0;
+        // char x[1024];
+        // while ((readLen = read(fd, x, 1024)) > 0)
+        // {
+        //     x[readLen] = '\0';
+        //     _response << x;
+        // }
         //\0 problem
     }
     else
     {
-        std::string _indxBody = this->_indexOfPage(this->_rootPath, this->_reqPath);
-        _response << _generateHeaders();
-        _response << "Content-Length: "<< _indxBody.length() <<"\r\n";
-        _response << "Content-Type: " << this->_getMimeType(".html") << "\r\n\r\n";
-        _response << _indxBody;
+        std::string _path = this->_indexOfPage(this->_rootPath, this->_reqPath);
+        return (std::make_pair(std::string(_generateHeaders(_path)+"\r\n"), _path));
     }
-    return (std::make_pair("HEADERS", "BODY"));
 }
 
 std::string Responder::_postMethode(void) 
