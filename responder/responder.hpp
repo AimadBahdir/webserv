@@ -36,10 +36,11 @@ class Responder
         void            _prepareResponse(void);
         void            _setRootPath(void);
         void            _setIndexs(void);
+        void            _setCGIResponseFile(std::string _path);
+        char**          _EnvarCGI();
         bool            _setIndex(std::string _index);
         bool            _setLocation(std::string _reqPath, std::vector<location_parser> _locations);
         bool            _errorsChecker(void);
-        char**          _EnvarCGI();
         RESPONSE_DATA   _staticResponse(void);
         RESPONSE_DATA   _redirectResponse();
         RESPONSE_DATA   _cgiResponse(void);

@@ -209,7 +209,7 @@ std::string Responder::_getDateTime(bool _fileName = false)
 
 Responder::RESPONSE_DATA Responder::_redirectResponse()
 {
-    return (std::make_pair("HEADERS", "BODY"));
+    return (std::make_pair("REDIRECTHEADERS", "REDIRECTBODY"));
 }
 
 Responder::RESPONSE_DATA Responder::_generateResponse(void)
@@ -281,18 +281,16 @@ char**  Responder::_EnvarCGI()
     return (_envars);
 }
 
-Responder::RESPONSE_DATA Responder::_cgiResponse(void)
+void Responder::_setCGIResponseFile(std::string _path)
 {
-    int _pid;
+    int _fd = open(_path.c_str(), O_CREAT | O_RDWR , 0400);
     char** _cmd = (char **)malloc(3 * sizeof(char*));
-
-    if (this->_indexPath.empty())
-        this->_indexPath = this->_rootPath;
     _cmd[0] = strdup(this->_location.getCgiPath().c_str());
     _cmd[1] = strdup(this->_indexPath.c_str());
     _cmd[2] = NULL;
-    int _fd = open(std::string("/tmp/"+_getDateTime(true)).c_str(), O_CREAT | O_RDWR , 0400);
-    if ((_pid = fork()) == -1)
+
+    int _pid = fork();
+    if (_pid == -1)
         this->_statusCode = "500";
     else if (_pid == 0)
     {
@@ -304,14 +302,48 @@ Responder::RESPONSE_DATA Responder::_cgiResponse(void)
             exit(errno);
         }
         close(STDOUT_FILENO);
+        close(_fd);
+        exit(0);
     }
     else
     {
         waitpid(_pid, 0, 0);
         close(_fd);
     }
+}
 
-    return (std::make_pair("HEADERS", "BODY"));
+Responder::RESPONSE_DATA Responder::_cgiResponse(void)
+{
+    std::stringstream _headers;
+    std::ifstream _file;
+    std::string _line;
+
+    if (this->_indexPath.empty())
+        this->_indexPath = this->_rootPath;
+
+    std::string _path = std::string("/tmp/"+_getDateTime(true));
+    this->_setCGIResponseFile(_path);
+    _headers << this->_generateHeaders("");
+    _headers << "Content-Length: "<< this->_getFileLength(_path) <<"\r\n";
+    _file.open(_path, std::ios::in);
+    size_t _len = 0;
+    if (_file.is_open())
+    {
+        while (std::getline(_file, _line))
+        {
+            _len += (_line.length() + 1);
+            if (_line.compare("\r") == 0)
+            {
+                _file.close();
+                break;
+            }
+            _headers << _line;
+        }
+        lseek(_file);
+        _file.seekg(_len, _file.beg);
+    }
+    
+    return (std::make_pair(_headers.str(), _path));
 }
 
 std::string Responder::_generateHeaders(std::string _responseFILE = "")
@@ -326,7 +358,7 @@ std::string Responder::_generateHeaders(std::string _responseFILE = "")
         _responseHeaders << "Connection: " << _headers.find("Connection")->second << "\r\n";
     if (!_responseFILE.empty())
     {
-        _responseHeaders << "Content-Length: "<< _getFileLength(_responseFILE) <<"\r\n";
+        _responseHeaders << "Content-Length: "<< this->_getFileLength(_responseFILE) <<"\r\n";
         _responseHeaders << "Content-Type: " << this->_getMimeType(_responseFILE) << "\r\n";
     }
     return (_responseHeaders.str());
@@ -382,7 +414,7 @@ std::string Responder::_deleteMethode(void)
 
 Responder::RESPONSE_DATA Responder::_uploadFile(void) 
 {
-    return (std::make_pair("HEADERS", "BODY"));
+    return (std::make_pair("UPLOADHEADERS", "UPLOADBODY"));
 }
 
 std::string Responder::_indexOfPage(std::string _root, std::string _dir)
