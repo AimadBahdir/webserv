@@ -6,7 +6,7 @@
 /*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:36 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/03/14 16:30:13 by wben-sai         ###   ########.fr       */
+/*   Updated: 2022/03/14 16:46:05 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -186,8 +186,8 @@ void sock_server::_send(int connectionServerSockFD, server_parser srv)
         res = paiir.first;
     }
         
-    char buf[10240];
-    int len_read = read(srr->file_response, buf, (sizeof(buf)));
+    char buf[10241];
+    int len_read = read(srr->file_response, buf, (sizeof(char) * 10240));
     if(len_read != -1)
     {
         buf[len_read] = '\0';
@@ -249,12 +249,10 @@ void sock_server::ManagementFDs()
             {
                 if (FD_ISSET(it->first , &FDs_writability_copy))
                 {
-                    std::cout <<"2222" << std::endl;
                     _send(it->first, (it->second)->get_server());
                 }
                 else if (FD_ISSET(it->first , &FDs_readability_copy)) 
                 {
-                    std::cout <<"111111" << std::endl;
                     if((it->second)->get_type_sock() == "server_socket")
                         _accept(it->first, ((it->second)->get_server()));
                     else 
