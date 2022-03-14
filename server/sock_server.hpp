@@ -6,7 +6,7 @@
 /*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:52 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/03/13 14:47:16 by wben-sai         ###   ########.fr       */
+/*   Updated: 2022/03/14 12:47:46 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,9 +17,10 @@
 #include <iostream>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <unistd.h>
 #include <ctime>
 #include <map>
+#include <unistd.h>
+#include<fcntl.h> 
 #include <vector>
 #include "../parser/parser.hpp"
 #include "../parser/request_parser.hpp"
@@ -33,6 +34,8 @@ class SRR
         request_parser *_request;
         std::string _response;
     public:
+        ssize_t file_response;
+        bool    is_open_file_response = false;
         int _number_request;
         SRR(){};
         SRR(std::string _type_sock, server_parser _server, std::string _filename)
