@@ -6,7 +6,7 @@
     #define WEBDEFAULT "/goinfre/abahdir/webservConf"
 #endif
 
-Responder::Responder(request_parser req, server_parser serv) : _request(req), _server(serv), _reqPath(req.getPath()), _statusCode("200"), _rootPath(WEBDEFAULT), _inProgress(false), _UPLOAD(false), _CGI(false)
+Responder::Responder(request_parser req, server_parser serv) : _request(req), _server(serv), _reqPath(req.getPath()), _statusCode("200"), _rootPath(WEBDEFAULT), _inProgress(false), _REDIRECT(false), _UPLOAD(false), _CGI(false)
 {
     struct stat _fstat;
     if (stat("./default", &_fstat) == 0 && S_ISDIR(_fstat.st_mode))
@@ -145,7 +145,11 @@ void    Responder::_prepareResponse(void)
         {
             if (!this->_location.getLocationPath().empty())
             {
-                if (!this->_location.getUploadPath().empty()
+                if (!this->_location.getRedirection().first.empty())
+                {
+                    this->_REDIRECT = true;
+                    this->_statusCode = this->_location.getRedirection().first;
+                } else if (!this->_location.getUploadPath().empty()
                 && this->_request.getMethode().compare("POST") == 0)
                 {
                     this->_UPLOAD = true;
@@ -168,31 +172,51 @@ void    Responder::_prepareResponse(void)
         {
             if (!this->_location.getLocationPath().empty())
             {
-                if (!this->_location.getUploadPath().empty()
+                if (!this->_location.getRedirection().first.empty())
+                {
+                    this->_REDIRECT = true;
+                    this->_statusCode = this->_location.getRedirection().first;
+                } else if (!this->_location.getUploadPath().empty()
                 && this->_request.getMethode().compare("POST") == 0)
+                {
                     this->_UPLOAD = true;
+                    this->_statusCode = "200";
+                }
                 else if(!this->_location.getCgiPath().empty())
+                {
                     this->_CGI = true;
+                    this->_statusCode = "200";
+                }
             }
-            this->_statusCode = "200";
         }
     }
     else
         this->_statusCode = "404";
 }
 
-std::string Responder::_getDateTime()
+std::string Responder::_getDateTime(bool _fileName = false)
 {
     char dateBuffer[1000];
-    time_t now = time(0);
-    struct tm dt = *gmtime(&now);
-    std::strftime(dateBuffer, sizeof(dateBuffer), "%a, %d %b %Y %H:%M:%S %Z", &dt);
+    time_t _now = time(0);
+
+    struct tm dt = *gmtime(&_now);
+    if (!_fileName)
+        std::strftime(dateBuffer, sizeof(dateBuffer), "%a, %d %b %Y %H:%M:%S %Z", &dt);
+    else
+        std::strftime(dateBuffer, sizeof(dateBuffer), "WSRSP_%d%m%Y%H%M%S", &dt);
     return (std::string(dateBuffer));
 }
 
-std::string Responder::_generateResponse(void)
+Responder::RESPONSE_DATA Responder::_redirectResponse()
 {
-    if (this->_UPLOAD)
+    return (std::make_pair("HEADERS", "BODY"));
+}
+
+Responder::RESPONSE_DATA Responder::_generateResponse(void)
+{
+    if (this->_REDIRECT)
+        return (this->_redirectResponse());
+    else if (this->_UPLOAD)
         return (this->_uploadFile());
     else if (this->_CGI)
         return (this->_cgiResponse());
@@ -257,7 +281,7 @@ char**  Responder::_EnvarCGI()
     return (_envars);
 }
 
-std::string Responder::_cgiResponse(void)
+Responder::RESPONSE_DATA Responder::_cgiResponse(void)
 {
     int _pid;
     char** _cmd = (char **)malloc(3 * sizeof(char*));
@@ -267,38 +291,56 @@ std::string Responder::_cgiResponse(void)
     _cmd[0] = strdup(this->_location.getCgiPath().c_str());
     _cmd[1] = strdup(this->_indexPath.c_str());
     _cmd[2] = NULL;
+    int _fd = open(std::string("/tmp/"+_getDateTime(true)).c_str(), O_CREAT | O_RDWR , 0400);
     if ((_pid = fork()) == -1)
         this->_statusCode = "500";
     else if (_pid == 0)
     {
+        if (dup2(_fd, STDOUT_FILENO) == -1)
+            exit(0);
         if(execve(*_cmd, _cmd, _EnvarCGI()) == -1)
         {
             this->_statusCode = "500";
             exit(errno);
         }
+        close(STDOUT_FILENO);
     }
     else
     {
         waitpid(_pid, 0, 0);
+        close(_fd);
         return (">>> ");
     }
 
-    return ("CGI EXECUTE");
+    return (std::make_pair("HEADERS", "BODY"));
 }
 
-std::string Responder::_staticResponse(void) 
+std::string Responder::_generateHeaders(std::string _responseFILE = "")
 {
-    std::stringstream _response;
+    std::stringstream _responseHeaders;
     std::map<std::string, std::string> _headers = this->_request.getHeaders();
 
-    _response << "HTTP/1.1 " << this->_statusCode << " " << this->_getError(this->_statusCode) << "\r\n";
-    _response << "Server: webserv/1.0.0\r\n";
-    _response << "Date: "<< this->_getDateTime() <<"\r\n";
+    _responseHeaders << "HTTP/1.1 " << this->_statusCode << " " << this->_getError(this->_statusCode) << "\r\n";
+    _responseHeaders << "Server: webserv/1.0.0\r\n";
+    _responseHeaders << "Date: "<< this->_getDateTime() <<"\r\n";
     if (_headers.find("Connection") != _headers.end())
-        _response << "Connection: " << _headers.find("Connection")->second << "\r\n";
+        _responseHeaders << "Connection: " << _headers.find("Connection")->second << "\r\n";
+    if (!_responseFILE.empty())
+    {
+        _responseHeaders << "Content-Length: "<< _getFileLength(_responseFILE) <<"\r\n";
+        _responseHeaders << "Content-Type: " << this->_getMimeType(_responseFILE) << "\r\n";
+    }
+    return (_responseHeaders.str());
+}
+
+Responder::RESPONSE_DATA Responder::_staticResponse(void) 
+{
+    std::stringstream _response;
+    
     if (this->_statusCode.compare("200") != 0)
     {
         std::string _errBody = this->_generateErrorBody(this->_statusCode);
+        _response << _generateHeaders();
         _response << "Content-Length: "<< _errBody.length() <<"\r\n";
         _response << "Content-Type: " << this->_getMimeType(".html") << "\r\n\r\n";
         _response << _errBody;
@@ -313,8 +355,7 @@ std::string Responder::_staticResponse(void)
             return this->_staticResponse();
         }
         int fd = open(this->_indexPath.c_str(), O_RDONLY);
-        _response << "Content-Length: "<< _getFileLength(this->_indexPath) <<"\r\n";
-        _response << "Content-Type: " << this->_getMimeType(this->_indexPath) << "\r\n\r\n";
+        _response << _generateHeaders(this->_indexPath);
         int readLen = 0;
         char x[1024];
         while ((readLen = read(fd, x, 1024)) > 0)
@@ -327,11 +368,12 @@ std::string Responder::_staticResponse(void)
     else
     {
         std::string _indxBody = this->_indexOfPage(this->_rootPath, this->_reqPath);
+        _response << _generateHeaders();
         _response << "Content-Length: "<< _indxBody.length() <<"\r\n";
         _response << "Content-Type: " << this->_getMimeType(".html") << "\r\n\r\n";
         _response << _indxBody;
     }
-    return (_response.str());
+    return (std::make_pair("HEADERS", "BODY"));
 }
 
 std::string Responder::_postMethode(void) 
@@ -344,9 +386,9 @@ std::string Responder::_deleteMethode(void)
     return ("DELETE");
 }
 
-std::string Responder::_uploadFile(void) 
+Responder::RESPONSE_DATA Responder::_uploadFile(void) 
 {
-    return ("UPLOAD FILE");
+    return (std::make_pair("HEADERS", "BODY"));
 }
 
 std::string Responder::_indexOfPage(std::string _root, std::string _dir)
@@ -385,7 +427,11 @@ std::string Responder::_indexOfPage(std::string _root, std::string _dir)
         closedir(dir);
     }
     _html << "</pre><br/>webserv/1.0.0</body></html>";
-    return (_html.str());
+    std::string _respath = std::string("/tmp/"+_getDateTime(true)+".html");
+    int _fd = open(_respath.c_str(), O_CREAT | O_RDWR , 0400);
+    write(_fd, _html.str().c_str(), _html.str().length());
+    close(_fd);
+    return (_respath);
 }
 
 std::string Responder::_trimPath(std::string _path)
@@ -515,7 +561,12 @@ std::string Responder::_getError(std::string errorCode)
 std::string Responder::_generateErrorBody(std::string errorCode)
 {
     std::string _msg = _getError(errorCode);
-    return (std::string("<html><head><title>"+_msg+"</title><style>body{background-color:#123;color:#FFF;display:flex;justify-content:center;align-items:center;flex-direction:column;height:96vh;}h1{font-size:5rem;margin:.5rem;}</style></head><body><center><h1>"+errorCode+"</h1><h2>"+_msg+"</h2><hr/>webserv/1.0.0</center></body></html>"));
+    std::string _html = std::string("<html><head><title>"+_msg+"</title><style>body{background-color:#123;color:#FFF;display:flex;justify-content:center;align-items:center;flex-direction:column;height:96vh;}h1{font-size:5rem;margin:.5rem;}</style></head><body><center><h1>"+errorCode+"</h1><h2>"+_msg+"</h2><hr/>webserv/1.0.0</center></body></html>");
+    std::string _respath = std::string("/tmp/"+_getDateTime(true)+".html");
+    int _fd = open(_respath.c_str(), O_CREAT | O_RDWR , 0400);
+    write(_fd, _html.c_str(), _html.length());
+    close(_fd);
+    return (_respath);
 }
 
 std::string Responder::_getMimeType(std::string path)
