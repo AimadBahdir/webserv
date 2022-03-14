@@ -60,7 +60,7 @@ bool    Responder::_errorsChecker(void)
     return true;
 }
 
-std::string Responder::response(void)
+Responder::RESPONSE_DATA Responder::response(void)
 {
     if (this->_inProgress)
         return (this->_generateResponse());
@@ -309,7 +309,6 @@ Responder::RESPONSE_DATA Responder::_cgiResponse(void)
     {
         waitpid(_pid, 0, 0);
         close(_fd);
-        return (">>> ");
     }
 
     return (std::make_pair("HEADERS", "BODY"));

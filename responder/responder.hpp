@@ -44,7 +44,7 @@ class Responder
         RESPONSE_DATA   _redirectResponse();
         RESPONSE_DATA   _cgiResponse(void);
         RESPONSE_DATA   _uploadFile(void);
-        std::string     _generateResponse();
+        RESPONSE_DATA    _generateResponse();
         std::string     _generateHeaders(std::string _responseFILE);
         std::string     _toUpper(const char* _str);
         std::string     _getDateTime(bool _fileName);
