@@ -115,7 +115,7 @@ int     main(int ac , char *av[])
             // std::cout << resp._indexOfPage("/", "/");
             // printConfData(conf->_servers);
             // std::cout << resp._generateResponse();
-            std::cout << "HEADERS: " << resp.response().first << std::endl;
+            std::cout << "RESPONSE: \n" << resp.response().first;
             std::cout << "BODY: " << resp.response().second << std::endl;
             delete conf;
         }

@@ -28,19 +28,19 @@ class Responder
         std::string        _statusCode;
         std::string        _rootPath;
         std::string        _indexPath;
-        bool               _inProgress;
         bool               _REDIRECT;
         bool               _UPLOAD;
         bool               _CGI;
 
         void            _prepareResponse(void);
         void            _setRootPath(void);
-        void            _setIndexs(void);
+        bool            _setIndexs(void);
         void            _setCGIResponseFile(std::string _path);
         char**          _EnvarCGI();
         bool            _setIndex(std::string _index);
         bool            _setLocation(std::string _reqPath, std::vector<location_parser> _locations);
         bool            _errorsChecker(void);
+        RESPONSE_DATA   _errorPagesChecker(void);
         RESPONSE_DATA   _staticResponse(void);
         RESPONSE_DATA   _redirectResponse();
         RESPONSE_DATA   _cgiResponse(void);

@@ -6,17 +6,14 @@
     #define WEBDEFAULT "/goinfre/abahdir/webservConf"
 #endif
 
-Responder::Responder(request_parser req, server_parser serv) : _request(req), _server(serv), _reqPath(req.getPath()), _statusCode("200"), _rootPath(WEBDEFAULT), _inProgress(false), _REDIRECT(false), _UPLOAD(false), _CGI(false)
+Responder::Responder(request_parser req, server_parser serv) : _request(req), _server(serv), _reqPath(req.getPath()), _statusCode("200"), _rootPath(WEBDEFAULT), _REDIRECT(false), _UPLOAD(false), _CGI(false)
 {
     struct stat _fstat;
     if (stat("./default", &_fstat) == 0 && S_ISDIR(_fstat.st_mode))
         system(std::string("cp -r ./default "+this->_rootPath).c_str());
 }
 
-Responder::Responder(Responder const & r)
-{
-    (*this) = r;
-}
+Responder::Responder(Responder const & r) { (*this) = r; }
 
 Responder& Responder::operator=(Responder const & r)
 {
@@ -24,15 +21,12 @@ Responder& Responder::operator=(Responder const & r)
     this->_location = r._location;
     this->_server = r._server;
     this->_statusCode = r._statusCode;
-    this->_inProgress = r._inProgress;
     return (*this);
 }
 
-Responder::~Responder() {}
-
 bool    Responder::_errorsChecker(void)
 {
-    if (this->_request.getMethode() == "")
+    if (this->_request.getMethode().empty())
     {
         this->_statusCode = "405";
         return false;
@@ -62,8 +56,6 @@ bool    Responder::_errorsChecker(void)
 
 Responder::RESPONSE_DATA Responder::response(void)
 {
-    if (this->_inProgress)
-        return (this->_generateResponse());
     if (this->_errorsChecker())
     {
         this->_setLocation(this->_request.getPath(), this->_server._locations);
@@ -121,24 +113,23 @@ bool    Responder::_setIndex(std::string _index)
     return false;
 }
 
-void    Responder::_setIndexs(void)
+bool    Responder::_setIndexs(void)
 {
     std::vector<std::string> _indexs = this->_location.getIndex();
-
-    if (_indexs.size() == 0)
+    if (_indexs.size() == 0 && this->_setIndex("index.html"))
     {
-        this->_setIndex("index.html");
-        return;
+        this->_indexPath = this->_rootPath;
+        return (true);
     }
     for (size_t i = 0; i < _indexs.size(); i++)
         if (this->_setIndex(_indexs[i]))
-            break;
+            return (true);
+    return (false);
 }
 
 void    Responder::_prepareResponse(void)
 {
     struct stat _fstats;
-    this->_inProgress = true;
     if (stat(this->_rootPath.c_str(), &_fstats) == 0)
     {
         if (S_ISDIR(_fstats.st_mode))
@@ -160,13 +151,15 @@ void    Responder::_prepareResponse(void)
                     this->_CGI = true;
                     this->_statusCode = "200";
                 }
-                else if (this->_location.getIndex().size() > 0)
-                    this->_setIndexs();
+                else if (this->_setIndexs())
+                    this->_statusCode = "200";
+                else if (this->_location.getAutoIndex())
+                    this->_statusCode = "200";
+                else
+                    this->_statusCode = "403";
             }
-            if (this->_location.getAutoIndex())
-                this->_statusCode = "200";
             else
-                this->_statusCode = "403";
+                this->_setIndexs();
         }
         else
         {
@@ -196,7 +189,7 @@ void    Responder::_prepareResponse(void)
 
 std::string Responder::_getDateTime(bool _fileName = false)
 {
-    char dateBuffer[1000];
+    char dateBuffer[56];
     time_t _now = time(0);
 
     struct tm dt = *gmtime(&_now);
@@ -331,7 +324,7 @@ Responder::RESPONSE_DATA Responder::_cgiResponse(void)
     {
         while (std::getline(_file, _line))
         {
-            _len += (_line.length() + 1);
+            _len++;
             if (_line.compare("\r") == 0)
             {
                 _file.close();
@@ -339,11 +332,11 @@ Responder::RESPONSE_DATA Responder::_cgiResponse(void)
             }
             _headers << _line;
         }
-        lseek(_file);
-        _file.seekg(_len, _file.beg);
+        std::stringstream _cmd;
+        _cmd << "sed -e '1," << _len << "d' <" << _path << " > " << _path << "_";
+        system(_cmd.str().c_str());
     }
-    
-    return (std::make_pair(_headers.str(), _path));
+    return (std::make_pair(_headers.str(), std::string(_path+"_")));
 }
 
 std::string Responder::_generateHeaders(std::string _responseFILE = "")
@@ -369,32 +362,9 @@ Responder::RESPONSE_DATA Responder::_staticResponse(void)
     std::stringstream _response;
     
     if (this->_statusCode.compare("200") != 0)
-    {
-        std::string _path = this->_generateErrorBody(this->_statusCode);
-        return (std::make_pair(std::string(_generateHeaders(_path)+"\r\n"), _path));
-    }
+        return (this->_errorPagesChecker());
     else if (!this->_indexPath.empty())
-    {
-        // struct stat _fstats;
-        // stat(this->_indexPath.c_str(), &_fstats);
-        // if ((_fstats.st_mode &  S_IRUSR) == 0)
-        // {
-        //     this->_statusCode = "403";
-        //     return this->_staticResponse();
-        // }
-        // int fd = open(this->_indexPath.c_str(), O_RDONLY);
-        // _response << _generateHeaders(this->_indexPath);
-        // std::string _path = this->_generateErrorBody(this->_statusCode);
         return (std::make_pair(std::string(_generateHeaders(this->_indexPath)+"\r\n"), this->_indexPath));
-        // int readLen = 0;
-        // char x[1024];
-        // while ((readLen = read(fd, x, 1024)) > 0)
-        // {
-        //     x[readLen] = '\0';
-        //     _response << x;
-        // }
-        //\0 problem
-    }
     else
     {
         std::string _path = this->_indexOfPage(this->_rootPath, this->_reqPath);
@@ -513,6 +483,49 @@ bool Responder::_setLocation(std::string _requestPath, std::vector<location_pars
     return (!this->_location.getLocationPath().empty());
 }
 
+Responder::RESPONSE_DATA Responder::_errorPagesChecker(void)
+{
+    std::vector<std::string> _errPages = this->_server.getErrorPages();
+    if (_errPages.size() > 1)
+    {
+        for(size_t i = 0; i < _errPages.size() - 1; i++)
+        {
+            int _v = std::atoi(_errPages[i].c_str());
+            if ((_v >= 300 && _v < 600) && (_errPages[i].compare(this->_statusCode) == 0))
+            {
+                std::string _path = _errPages.back();
+                if (!_path.empty() && _path[0] == '/')
+                {
+                    if (this->_setLocation(_path, this->_server._locations))
+                        this->_prepareResponse();
+                    if (this->_statusCode.compare("200") == 0)
+                        return (this->_generateResponse());
+                    else
+                    {
+                        _path = this->_generateErrorBody(this->_statusCode);
+                        return (std::make_pair(std::string(_generateHeaders(_path)+"\r\n"), _path));
+                    }
+                }
+                // else
+                //     return redirection
+            }
+        }
+    }
+    std::string _path = this->_generateErrorBody(this->_statusCode);
+    return (std::make_pair(std::string(_generateHeaders(_path)+"\r\n"), _path));
+}
+
+std::string Responder::_generateErrorBody(std::string errorCode)
+{
+    std::string _msg = _getError(errorCode);
+    std::string _html = std::string("<html><head><title>"+_msg+"</title><style>body{background-color:#123;color:#FFF;display:flex;justify-content:center;align-items:center;flex-direction:column;height:96vh;}h1{font-size:5rem;margin:.5rem;}</style></head><body><center><h1>"+errorCode+"</h1><h2>"+_msg+"</h2><hr/>webserv/1.0.0</center></body></html>");
+    std::string _respath = std::string("/tmp/"+_getDateTime(true)+".html");
+    int _fd = open(_respath.c_str(), O_CREAT | O_RDWR , 0400);
+    write(_fd, _html.c_str(), _html.length());
+    close(_fd);
+    return (_respath);
+}
+
 std::string Responder::_getError(std::string errorCode)
 {
     std::map<std::string, std::string> statusCodes;
@@ -582,17 +595,6 @@ std::string Responder::_getError(std::string errorCode)
     statusCodes["511"] = "Network Authentication Required";
 
     return (statusCodes[errorCode]);
-}
-
-std::string Responder::_generateErrorBody(std::string errorCode)
-{
-    std::string _msg = _getError(errorCode);
-    std::string _html = std::string("<html><head><title>"+_msg+"</title><style>body{background-color:#123;color:#FFF;display:flex;justify-content:center;align-items:center;flex-direction:column;height:96vh;}h1{font-size:5rem;margin:.5rem;}</style></head><body><center><h1>"+errorCode+"</h1><h2>"+_msg+"</h2><hr/>webserv/1.0.0</center></body></html>");
-    std::string _respath = std::string("/tmp/"+_getDateTime(true)+".html");
-    int _fd = open(_respath.c_str(), O_CREAT | O_RDWR , 0400);
-    write(_fd, _html.c_str(), _html.length());
-    close(_fd);
-    return (_respath);
 }
 
 std::string Responder::_getMimeType(std::string path)
@@ -721,3 +723,4 @@ std::string Responder::_getMimeType(std::string path)
     return (it->second);
 }
 
+Responder::~Responder() {}
