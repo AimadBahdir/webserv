@@ -1,6 +1,5 @@
 
 #pragma once
-#include "../configStructs.cpp"
 #include "../../parser/server_parser.hpp"
 #include "../../parser/request_parser.hpp"
 #include "../../parser/location_parser.hpp"
@@ -33,7 +32,7 @@ class Responder
         bool               _CGI;
 
         void            _prepareResponse(void);
-        void            _setRootPath(void);
+        void            _setRootPath(std::string _path);
         bool            _setIndexs(void);
         void            _setCGIResponseFile(std::string _path);
         char**          _EnvarCGI();
@@ -42,11 +41,12 @@ class Responder
         bool            _errorsChecker(void);
         RESPONSE_DATA   _errorPagesChecker(void);
         RESPONSE_DATA   _staticResponse(void);
-        RESPONSE_DATA   _redirectResponse();
+        RESPONSE_DATA   _redirectResponse(std::string _statuscode, std::string _redirectPath);
         RESPONSE_DATA   _cgiResponse(void);
         RESPONSE_DATA   _uploadFile(void);
         RESPONSE_DATA    _generateResponse();
         std::string     _generateHeaders(std::string _responseFILE);
+        std::string     _creatFile(std::string _body, std::string _ext);
         std::string     _toUpper(const char* _str);
         std::string     _getDateTime(bool _fileName);
         std::string     _trimPath(std::string _path);

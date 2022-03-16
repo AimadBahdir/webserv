@@ -70,6 +70,11 @@ int     main(int ac , char *av[])
         try
         {
             parser *conf = new parser(av[1]);
+            if (conf->_servers.size() == 0)
+            {
+                std::cerr << "File format incompatible." << std::endl;
+                exit(0);
+            }
             // std::map<std::string, std::string> headers;
 
             // headers["Host"] = "127.0.0.1";
@@ -94,18 +99,18 @@ int     main(int ac , char *av[])
             // req.setHeaders(headers);
             // req.setBodyFile("./Makefile");
 
-            request_parser obj("body");
+            request_parser obj("bodys");
 
             int readLen;
             int fd = open("./request.test", O_RDONLY);
             char x[15];
             int allLen = 0;
-            while ((readLen = read(fd, x, 14)) > 0)
+            while (!obj.getStatus())
             {
+                readLen = read(fd, x, 14);
                 x[readLen] = '\0';
                 allLen += readLen;
-                if (!obj.getStatus())
-                    obj.sendLine(x);
+                obj.sendLine(x);
             }
             std::cout << obj.getMethode() << std::endl;
             std::cout << obj.getVersion() << std::endl;

@@ -26,21 +26,17 @@ Responder& Responder::operator=(Responder const & r)
 
 bool    Responder::_errorsChecker(void)
 {
+    std::map<std::string, std::string> _headers = this->_request.getHeaders();
+    if ((this->_server.getMaxSzie() < (int)this->_getFileLength(this->_request.getBodyFile()))
+    || (_headers.find("Content-Length") != _headers.end() && _headers.find("Transfer-Encoding") != _headers.end())
+    || (_headers.find("Host") == _headers.end()))
+    {
+        this->_statusCode = "400";
+        return false;
+    }
     if (this->_request.getMethode().empty())
     {
         this->_statusCode = "405";
-        return false;
-    }
-    if (this->_request.getVersion().compare("1.1") != 0)
-    {
-        this->_statusCode = "505";
-        return false;
-    }
-    std::map<std::string, std::string> _headers = this->_request.getHeaders();
-    if (_headers.find("Content-Length") != _headers.end()
-     && _headers.find("Transfer-Encoding") != _headers.end())
-    {
-        this->_statusCode = "400";
         return false;
     }
     if (this->_request.getMethode().compare("GET") != 0
@@ -50,7 +46,11 @@ bool    Responder::_errorsChecker(void)
         this->_statusCode = "501";
         return false;
     }
-
+    if (this->_request.getVersion().compare("1.1") != 0)
+    {
+        this->_statusCode = "505";
+        return false;
+    }
     return true;
 }
 
@@ -59,7 +59,7 @@ Responder::RESPONSE_DATA Responder::response(void)
     if (this->_errorsChecker())
     {
         this->_setLocation(this->_request.getPath(), this->_server._locations);
-        this->_setRootPath();
+        this->_setRootPath(this->_request.getPath());
         this->_prepareResponse();
     }
     return (this->_generateResponse());
@@ -77,17 +77,17 @@ size_t  Responder::_getFileLength(std::string _fpath)
     return (length);
 }
 
-void    Responder::_setRootPath(void)
+void    Responder::_setRootPath(std::string _path)
 {
     if(!this->_location.getLocationPath().empty()
     && !this->_location.getRootPath().empty())
-        this->_rootPath = this->_trimPath(this->_location.getRootPath() + "/" + this->_request.getPath());
+        this->_rootPath = this->_trimPath(this->_location.getRootPath() + "/" + _path);
     else if (!this->_server.getRoot().empty())
-        this->_rootPath = this->_trimPath(this->_server.getRoot() + "/" + this->_request.getPath());
+        this->_rootPath = this->_trimPath(this->_server.getRoot() + "/" + _path);
     else
     {
         this->_rootPath = WEBDEFAULT;
-        this->_rootPath = this->_trimPath(this->_rootPath + "/" + this->_request.getPath());
+        this->_rootPath = this->_trimPath(this->_rootPath + "/" + _path);
     }
 }
 
@@ -181,6 +181,11 @@ void    Responder::_prepareResponse(void)
                     this->_statusCode = "200";
                 }
             }
+            else
+            {
+                this->_indexPath = this->_rootPath;
+                this->_statusCode = "200";
+            }
         }
     }
     else
@@ -189,26 +194,45 @@ void    Responder::_prepareResponse(void)
 
 std::string Responder::_getDateTime(bool _fileName = false)
 {
-    char dateBuffer[56];
     time_t _now = time(0);
 
-    struct tm dt = *gmtime(&_now);
     if (!_fileName)
+    {
+        struct tm dt = *gmtime(&_now);
+        char dateBuffer[96];
         std::strftime(dateBuffer, sizeof(dateBuffer), "%a, %d %b %Y %H:%M:%S %Z", &dt);
+        return (std::string(dateBuffer));
+    }
     else
-        std::strftime(dateBuffer, sizeof(dateBuffer), "WSRSP_%d%m%Y%H%M%S", &dt);
-    return (std::string(dateBuffer));
+    {
+        struct timeval _ms;
+        std::stringstream _res;
+        _res << "WSRSP" << (_now + _ms.tv_usec);
+        return (_res.str());
+    }
 }
 
-Responder::RESPONSE_DATA Responder::_redirectResponse()
+Responder::RESPONSE_DATA Responder::_redirectResponse(std::string _stcode, std::string _redirectPath)
 {
-    return (std::make_pair("REDIRECTHEADERS", "REDIRECTBODY"));
+    std::stringstream _headers;
+    this->_statusCode = _stcode;
+    std::string _respath = this->_creatFile(_redirectPath, ".txt");
+    _headers << this->_generateHeaders(_respath);
+    std::vector<std::string> _redirectCodes;
+    _redirectCodes.push_back("301");
+    _redirectCodes.push_back("302");
+    _redirectCodes.push_back("303");
+    _redirectCodes.push_back("307");
+    _redirectCodes.push_back("308");
+    if (std::find(_redirectCodes.begin(), _redirectCodes.end(), _stcode) != _redirectCodes.end())
+        _headers << "Location: " << _redirectPath << "\r\n";
+    return (std::make_pair(_headers.str()+"\r\n", _respath));
 }
 
 Responder::RESPONSE_DATA Responder::_generateResponse(void)
 {
     if (this->_REDIRECT)
-        return (this->_redirectResponse());
+        return (this->_redirectResponse(this->_location.getRedirection().first, this->_location.getRedirection().second));
     else if (this->_UPLOAD)
         return (this->_uploadFile());
     else if (this->_CGI)
@@ -336,7 +360,7 @@ Responder::RESPONSE_DATA Responder::_cgiResponse(void)
         _cmd << "sed -e '1," << _len << "d' <" << _path << " > " << _path << "_";
         system(_cmd.str().c_str());
     }
-    return (std::make_pair(_headers.str(), std::string(_path+"_")));
+    return (std::make_pair(_headers.str()+"\n\r", std::string(_path+"_")));
 }
 
 std::string Responder::_generateHeaders(std::string _responseFILE = "")
@@ -423,9 +447,15 @@ std::string Responder::_indexOfPage(std::string _root, std::string _dir)
         closedir(dir);
     }
     _html << "</pre><br/>webserv/1.0.0</body></html>";
-    std::string _respath = std::string("/tmp/"+_getDateTime(true)+".html");
+    
+    return (this->_creatFile(_html.str(), ".html"));
+}
+
+std::string Responder::_creatFile(std::string _body, std::string _ext)
+{
+    std::string _respath = std::string("/tmp/"+this->_getDateTime(true)+_ext);
     int _fd = open(_respath.c_str(), O_CREAT | O_RDWR , 0400);
-    write(_fd, _html.str().c_str(), _html.str().length());
+    write(_fd, _body.c_str(), _body.length());
     close(_fd);
     return (_respath);
 }
@@ -496,8 +526,9 @@ Responder::RESPONSE_DATA Responder::_errorPagesChecker(void)
                 std::string _path = _errPages.back();
                 if (!_path.empty() && _path[0] == '/')
                 {
-                    if (this->_setLocation(_path, this->_server._locations))
-                        this->_prepareResponse();
+                    this->_setLocation(_path, this->_server._locations);
+                    this->_setRootPath(_path);
+                    this->_prepareResponse();
                     if (this->_statusCode.compare("200") == 0)
                         return (this->_generateResponse());
                     else
@@ -506,8 +537,8 @@ Responder::RESPONSE_DATA Responder::_errorPagesChecker(void)
                         return (std::make_pair(std::string(_generateHeaders(_path)+"\r\n"), _path));
                     }
                 }
-                // else
-                //     return redirection
+                else
+                    return this->_redirectResponse("301", _path);
             }
         }
     }
@@ -519,11 +550,7 @@ std::string Responder::_generateErrorBody(std::string errorCode)
 {
     std::string _msg = _getError(errorCode);
     std::string _html = std::string("<html><head><title>"+_msg+"</title><style>body{background-color:#123;color:#FFF;display:flex;justify-content:center;align-items:center;flex-direction:column;height:96vh;}h1{font-size:5rem;margin:.5rem;}</style></head><body><center><h1>"+errorCode+"</h1><h2>"+_msg+"</h2><hr/>webserv/1.0.0</center></body></html>");
-    std::string _respath = std::string("/tmp/"+_getDateTime(true)+".html");
-    int _fd = open(_respath.c_str(), O_CREAT | O_RDWR , 0400);
-    write(_fd, _html.c_str(), _html.length());
-    close(_fd);
-    return (_respath);
+    return (this->_creatFile(_html, ".html"));
 }
 
 std::string Responder::_getError(std::string errorCode)
