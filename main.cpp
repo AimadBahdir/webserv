@@ -120,8 +120,9 @@ int     main(int ac , char *av[])
             // std::cout << resp._indexOfPage("/", "/");
             // printConfData(conf->_servers);
             // std::cout << resp._generateResponse();
-            std::cout << "RESPONSE: \n" << resp.response().first;
-            std::cout << "BODY: " << resp.response().second << std::endl;
+            Responder::RESPONSE_DATA _respond = resp.response();
+            std::cout << "RESPONSE: \n" << _respond.first;
+            std::cout << "BODY: " << _respond.second << std::endl;
             delete conf;
         }
         catch(const char *str)

@@ -27,7 +27,7 @@ Responder& Responder::operator=(Responder const & r)
 bool    Responder::_errorsChecker(void)
 {
     std::map<std::string, std::string> _headers = this->_request.getHeaders();
-    if ((this->_server.getMaxSzie() < (int)this->_getFileLength(this->_request.getBodyFile()))
+    if ((this->_server.getMaxSzie() > 0 && this->_server.getMaxSzie() < (int)this->_getFileLength(this->_request.getBodyFile()))
     || (_headers.find("Content-Length") != _headers.end() && _headers.find("Transfer-Encoding") != _headers.end())
     || (_headers.find("Host") == _headers.end()))
     {
@@ -134,7 +134,9 @@ void    Responder::_prepareResponse(void)
     {
         if (S_ISDIR(_fstats.st_mode))
         {
-            if (!this->_location.getLocationPath().empty())
+            if ((_fstats.st_mode & S_IROTH) == 0)
+                this->_statusCode = "403";
+            else if (!this->_location.getLocationPath().empty())
             {
                 if (!this->_location.getRedirection().first.empty())
                 {
@@ -169,23 +171,23 @@ void    Responder::_prepareResponse(void)
                 {
                     this->_REDIRECT = true;
                     this->_statusCode = this->_location.getRedirection().first;
+                    return;
                 } else if (!this->_location.getUploadPath().empty()
                 && this->_request.getMethode().compare("POST") == 0)
                 {
                     this->_UPLOAD = true;
                     this->_statusCode = "200";
+                    return;
                 }
                 else if(!this->_location.getCgiPath().empty())
                 {
                     this->_CGI = true;
                     this->_statusCode = "200";
+                    return;
                 }
             }
-            else
-            {
-                this->_indexPath = this->_rootPath;
-                this->_statusCode = "200";
-            }
+            this->_indexPath = this->_rootPath;
+            this->_statusCode = "200";
         }
     }
     else
@@ -435,10 +437,10 @@ std::string Responder::_indexOfPage(std::string _root, std::string _dir)
             {
                 dt = *(gmtime(&stats.st_ctime));
                 if (std::string(dirp->d_name).compare("..") == 0)
-                    _html << "<a class='data' href='" << std::string(dirp->d_name) << "'><< Back </a>\n";
+                    _html << "<a class='data' href='" << this->_trimPath(std::string(this->_reqPath+"/"+dirp->d_name)) << "'><< Back </a>\n";
                 else
                 {
-                    _html << "<div class='data'><a title='" << dirp->d_name << "' href='" << std::string(dirp->d_name) << "'>" << std::string(dirp->d_name) << "</a><span>";
+                    _html << "<div class='data'><a title='" << dirp->d_name << "' href='" << this->_trimPath(std::string(this->_reqPath+"/"+dirp->d_name)) << "'>" << std::string(dirp->d_name) << "</a><span>";
                     _html << ((dt.tm_mday < 10) ? "0" : "") << dt.tm_mday << "/" << ((dt.tm_mon < 10) ? "0" : "") << dt.tm_mon << "/" << dt.tm_year + 1900 << " ";
                     _html << ((dt.tm_hour < 10) ? "0" : "") << dt.tm_hour << ":" << ((dt.tm_min < 10) ? "0" : "") << dt.tm_min << "</span></div>\n";
                 }
@@ -741,11 +743,11 @@ std::string Responder::_getMimeType(std::string path)
 
     size_t ppos =  path.find_last_of(".");
     if (ppos == std::string::npos)
-        return (mimeTypes["bin"]);
+        return (mimeTypes["txt"]);
 
     std::map<std::string, std::string>::iterator it = mimeTypes.find(path.substr(++ppos));
     if (it == mimeTypes.end())
-        return (mimeTypes["bin"]);
+        return (mimeTypes["txt"]);
 
     return (it->second);
 }
