@@ -134,7 +134,7 @@ void    Responder::_prepareResponse(void)
     {
         if (S_ISDIR(_fstats.st_mode))
         {
-            if ((_fstats.st_mode & S_IROTH) == 0)
+            if(open(this->_rootPath.c_str(), O_RDONLY) == -1)
                 this->_statusCode = "403";
             else if (!this->_location.getLocationPath().empty())
             {
@@ -191,7 +191,10 @@ void    Responder::_prepareResponse(void)
         }
     }
     else
+    {
+        std::cout << "ERRNO: " << errno << " | " << this->_rootPath << std::endl;
         this->_statusCode = "404";
+    }
 }
 
 std::string Responder::_getDateTime(bool _fileName = false)
@@ -302,7 +305,10 @@ char**  Responder::_EnvarCGI()
 
 void Responder::_setCGIResponseFile(std::string _path)
 {
-    int _fd = open(_path.c_str(), O_CREAT | O_RDWR , 0400);
+    int _outfd = open(_path.c_str(), O_CREAT | O_RDWR , 0400);
+    int _infd = STDIN_FILENO;
+    if (!this->_request.getBodyFile().empty())
+        _infd = open(this->_request.getBodyFile().c_str(), O_RDONLY);
     char** _cmd = (char **)malloc(3 * sizeof(char*));
     _cmd[0] = strdup(this->_location.getCgiPath().c_str());
     _cmd[1] = strdup(this->_indexPath.c_str());
@@ -313,21 +319,27 @@ void Responder::_setCGIResponseFile(std::string _path)
         this->_statusCode = "500";
     else if (_pid == 0)
     {
-        if (dup2(_fd, STDOUT_FILENO) == -1)
-            exit(0);
+        if (dup2(_outfd, STDOUT_FILENO) == -1)
+            exit(1);
+        if (dup2(_infd, STDIN_FILENO) == -1)
+            exit(1);
         if(execve(*_cmd, _cmd, _EnvarCGI()) == -1)
         {
             this->_statusCode = "500";
+            close(_infd);
+            close(_outfd);
             exit(errno);
         }
         close(STDOUT_FILENO);
-        close(_fd);
+        close(_infd);
+        close(_outfd);
         exit(0);
     }
     else
     {
         waitpid(_pid, 0, 0);
-        close(_fd);
+        close(_infd);
+        close(_outfd);
     }
 }
 
