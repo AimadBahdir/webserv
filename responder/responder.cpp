@@ -436,6 +436,7 @@ Responder::RESPONSE_DATA Responder::_staticResponse(void)
 
 Responder::RESPONSE_DATA Responder::_uploadFile(void) 
 {
+    
     return (std::make_pair("UPLOADHEADERS", "UPLOADBODY"));
 }
 
@@ -652,7 +653,7 @@ std::string Responder::_getError(std::string errorCode)
     return (statusCodes[errorCode]);
 }
 
-std::string Responder::_getMimeType(std::string path)
+std::string Responder::_getMimeType(std::string _toFind, bool _findExt = false)
 {
     std::map<std::string, std::string> mimeTypes;
 
@@ -767,14 +768,20 @@ std::string Responder::_getMimeType(std::string path)
     mimeTypes["wmv"] ="video/x-ms-wmv";
     mimeTypes["avi"] ="video/x-msvideo";
 
-    size_t ppos =  path.find_last_of(".");
+    if (_findExt)
+    {
+        std::map<std::string, std::string>::iterator it = mimeTypes.begin();
+        for (; it != mimeTypes.end(); ++it)
+            if (it->second.compare(_toFind) == 0)
+                return it->first;
+        return ("");
+    }
+    size_t ppos =  _toFind.find_last_of(".");
     if (ppos == std::string::npos)
         return (mimeTypes["txt"]);
-
-    std::map<std::string, std::string>::iterator it = mimeTypes.find(path.substr(++ppos));
+    std::map<std::string, std::string>::iterator it = mimeTypes.find(_toFind.substr(++ppos));
     if (it == mimeTypes.end())
         return (mimeTypes["txt"]);
-
     return (it->second);
 }
 

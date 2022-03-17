@@ -51,7 +51,7 @@ class Responder
         std::string     _getDateTime(bool _fileName);
         std::string     _trimPath(std::string _path);
         std::string     _getErrorPage(void);
-        std::string     _getMimeType(std::string path);
+        std::string     _getMimeType(std::string _toFind, bool _findExt);
         std::string     _getError(std::string errorCode);
         std::string     _generateErrorBody(std::string errorMessage);
         std::string     _indexOfPage(std::string _root, std::string _dir);
