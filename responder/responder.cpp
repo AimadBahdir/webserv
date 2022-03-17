@@ -9,7 +9,8 @@
 Responder::Responder(request_parser req, server_parser serv) : _request(req), _server(serv), _reqPath(req.getPath()), _statusCode("200"), _rootPath(WEBDEFAULT), _REDIRECT(false), _UPLOAD(false), _CGI(false)
 {
     struct stat _fstat;
-    if (stat("./default", &_fstat) == 0 && S_ISDIR(_fstat.st_mode))
+    if (stat(std::string(this->_rootPath+"/default").c_str(), &_fstat) != 0 
+     && stat("./default", &_fstat) == 0 && S_ISDIR(_fstat.st_mode))
         system(std::string("cp -r ./default "+this->_rootPath).c_str());
 }
 
@@ -310,9 +311,6 @@ char**  Responder::_EnvarCGI()
 void Responder::_setCGIResponseFile(std::string _path)
 {
     int _outfd = open(_path.c_str(), O_CREAT | O_RDWR , 0400);
-    int _infd = STDIN_FILENO;
-    if (!this->_request.getBodyFile().empty())
-        _infd = open(this->_request.getBodyFile().c_str(), O_RDONLY);
     char** _cmd = (char **)malloc(3 * sizeof(char*));
     _cmd[0] = strdup(this->_location.getCgiPath().c_str());
     _cmd[1] = strdup(this->_indexPath.c_str());
@@ -325,24 +323,19 @@ void Responder::_setCGIResponseFile(std::string _path)
     {
         if (dup2(_outfd, STDOUT_FILENO) == -1)
             exit(1);
-        if (dup2(_infd, STDIN_FILENO) == -1)
-            exit(1);
         if(execve(*_cmd, _cmd, _EnvarCGI()) == -1)
         {
             this->_statusCode = "500";
-            close(_infd);
             close(_outfd);
             exit(errno);
         }
         close(STDOUT_FILENO);
-        close(_infd);
         close(_outfd);
         exit(0);
     }
     else
     {
         waitpid(_pid, 0, 0);
-        close(_infd);
         close(_outfd);
     }
 }
@@ -385,6 +378,7 @@ Responder::RESPONSE_DATA Responder::_cgiResponse(void)
     _headers << this->_generateHeaders("");
     _headers << _cgiHeaders.str();
     _headers << "Content-Length: "<< this->_getFileLength(_path+"_") <<"\r\n";
+    std::cout << _headers.str() << "BODY:" << std::string(_path+"_") << std::endl;
     return (std::make_pair(_headers.str()+"\n\r", std::string(_path+"_")));
 }
 
