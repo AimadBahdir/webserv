@@ -50,8 +50,6 @@ class Responder
         std::string     _toUpper(const char* _str);
         std::string     _getDateTime(bool _fileName);
         std::string     _trimPath(std::string _path);
-        std::string     _postMethode(void);
-        std::string     _deleteMethode(void);
         std::string     _getErrorPage(void);
         std::string     _getMimeType(std::string path);
         std::string     _getError(std::string errorCode);

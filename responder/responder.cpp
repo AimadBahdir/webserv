@@ -409,26 +409,29 @@ std::string Responder::_generateHeaders(std::string _responseFILE = "")
 Responder::RESPONSE_DATA Responder::_staticResponse(void) 
 {
     std::stringstream _response;
-    
+    if (this->_request.getMethode().compare("DELETE") == 0)
+        this->_statusCode = "405";
     if (this->_statusCode.compare("200") != 0)
         return (this->_errorPagesChecker());
     else if (!this->_indexPath.empty())
+    {
+        if (this->_request.getMethode().compare("POST") == 0)
+        {
+            this->_statusCode = "405";
+            return (this->_staticResponse());
+        }
         return (std::make_pair(std::string(_generateHeaders(this->_indexPath)+"\r\n"), this->_indexPath));
+    }
     else
     {
+        if (this->_request.getMethode().compare("POST") == 0)
+        {
+            this->_statusCode = "403";
+            return (this->_staticResponse());
+        }
         std::string _path = this->_indexOfPage(this->_rootPath, this->_reqPath);
         return (std::make_pair(std::string(_generateHeaders(_path)+"\r\n"), _path));
     }
-}
-
-std::string Responder::_postMethode(void) 
-{
-    return ("POST");
-}
-
-std::string Responder::_deleteMethode(void) 
-{
-    return ("DELETE");
 }
 
 Responder::RESPONSE_DATA Responder::_uploadFile(void) 
