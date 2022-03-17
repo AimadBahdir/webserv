@@ -1,0 +1,37 @@
+
+
+
+GET /path?query1=val&query2=val&query3=val&query4=val HTTP/1.1\r\n
+headkey1: value\r\n
+headkey2: value\r\n
+headkey3: value\r\n
+headkey4: value\r\n
+Content-Length: 686\r\n\r\n
+1body body body body body body body body body body body body body body body body body1   
+2body body body body body body body body body body body body body body body body body2   
+3body body body body body body body body body body body body body body body body body3   
+4body body body body body body body body body body body body body body body body body4   
+5body body body body body body body body body body body body body body body body body5   
+6body body body body body body body body body body body body body body body body body6   
+7body body body body body body body body body body body body body body body body body7   
+8body body body body body body body body body body body body body body body body body8
+
+
+
+GET /path?query1=val&query2=val&query3=val&query4=val HTTP/1.1\r\n
+Content-Type: text/plain\r\n
+Transfer-Encoding: chunked\r\n
+\r\n
+26\r\n
+Voici les données du premier morceau\r\n\
+1C\r\n
+et voici un second morceau\r\n
+20\r\n
+et voici deux derniers morceaux \r\n
+12\r\n
+sans saut de ligne\r\n
+0\r\n
+\r\n
+
+
+
