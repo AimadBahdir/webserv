@@ -6,7 +6,7 @@
 /*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:36 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/03/14 16:46:05 by wben-sai         ###   ########.fr       */
+/*   Updated: 2022/03/15 16:46:14 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,8 @@
 sock_server::sock_server(std::vector<server_parser> servers)
 {
     int fd_sock;
+    if(servers.size() == 0)
+        exit(2);
     for (std::vector<server_parser>::iterator it = servers.begin(); it != servers.end(); it++)
     {
         fd_sock = _create_socket(*it);
@@ -148,25 +150,16 @@ void sock_server::_recv(int connectionServerSockFD)
         try
         {
             temp->sendLine(buf);
-            std::cout << "Status = " << temp->getStatus() <<"\n";
             if (temp->getStatus())
             {
                 FD_SET(connectionServerSockFD, &FDs_writability);
                 FD_CLR(connectionServerSockFD, &FDs_readability);
-                //temp->removeFile();
-                //std::cout << " << buf << std::endl; 
             }
+            std::cout << "tmp"<< temp->getPath() << std::endl;
         }
         catch(const char *str) {
             //std::cout << str << std::endl;
         }
-        //std::string res = buf
-        //std::string rr = "HTTP/1.1 200 OK\r\nContent-length:9\r\n\r\nalothhhna";
-        //send(connectionServerSockFD, rr.c_str() , rr.length(), 0);
-        //std::cout << "buf = " << buf << std::endl; 
-        //memset(buf, 0, sizeof(buf));  
-        //for (std::map<int , std::string>::iterator i = FD_MAP.begin(); i != FD_MAP.end(); i++)
-        //    std::cout << "fd = " << i->first << " val = "<< i->second << std::endl;   
     }
 }
 
@@ -193,9 +186,6 @@ void sock_server::_send(int connectionServerSockFD, server_parser srv)
         buf[len_read] = '\0';
         srr->Length_read += len_read;
     }
-    else
-        exit(0);
-    
     
     res += buf;
     
@@ -219,7 +209,7 @@ void sock_server::_send(int connectionServerSockFD, server_parser srv)
         srr->_number_request++;
         std::string file_name = std::to_string(std::time(nullptr)) + "_" + std::to_string(connectionServerSockFD)+ "_" + std::to_string(srr->_number_request);
         delete srr->get_request_parser();
-        //srr->get_request_parser()->removeFile();
+        srr->get_request_parser()->removeFile();
         srr->set_request_parser(new request_parser("/tmp/" + file_name));
     }
 }
