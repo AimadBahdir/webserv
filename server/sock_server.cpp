@@ -6,7 +6,7 @@
 /*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:36 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/03/17 17:37:34 by wben-sai         ###   ########.fr       */
+/*   Updated: 2022/03/17 18:02:23 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -137,7 +137,6 @@ void sock_server::_recv(int connectionServerSockFD)
 {
     char buf[10240];
     ssize_t lenString = recv(connectionServerSockFD, buf, (sizeof(buf)), 0);
-    buf[lenString] = '\0';
     if(lenString == 0)
     {
         FD_CLR(connectionServerSockFD, &FDs_readability);
@@ -149,7 +148,8 @@ void sock_server::_recv(int connectionServerSockFD)
         request_parser *temp = M_FSRR.find(connectionServerSockFD)->second->get_request_parser();
         try
         {
-            temp->sendLine(buf);
+            std::string send_read(buf, lenString);
+            temp->sendLine(send_read);
             if (temp->getStatus())
             {
                 FD_SET(connectionServerSockFD, &FDs_writability);
