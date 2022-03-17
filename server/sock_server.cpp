@@ -6,7 +6,7 @@
 /*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:36 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/03/17 18:02:23 by wben-sai         ###   ########.fr       */
+/*   Updated: 2022/03/17 20:12:41 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,12 @@ sock_server::sock_server(std::vector<server_parser> servers)
     int fd_sock;
     if(servers.size() == 0)
         exit(2);
+
+    FD_ZERO(&FDs_readability_copy);
+    FD_ZERO(&FDs_writability_copy);
+    FD_ZERO(&FDs_readability);
+    FD_ZERO(&FDs_writability);
+    
     for (std::vector<server_parser>::iterator it = servers.begin(); it != servers.end(); it++)
     {
         fd_sock = _create_socket(*it);
@@ -231,6 +237,7 @@ int sock_server::_select()
 
 void sock_server::ManagementFDs()
 {
+    
     while (true)
     {
         FDs_readability_copy = FDs_readability;
