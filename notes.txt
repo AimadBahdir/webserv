@@ -1,6 +1,0 @@
-1. look at CHAR * vs std::String
-2. store the block until \r\n
-3. parse it;
-4. store the body to a file
-5. figure out how to setup the status;
-6. looking for mess cases and fixing them.

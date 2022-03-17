@@ -401,7 +401,7 @@ std::string Responder::_generateHeaders(std::string _responseFILE = "")
     if (!_responseFILE.empty())
     {
         _responseHeaders << "Content-Length: "<< this->_getFileLength(_responseFILE) <<"\r\n";
-        _responseHeaders << "Content-Type: " << this->_getMimeType(_responseFILE) << "\r\n";
+        _responseHeaders << "Content-Type: " << this->_getMimeType(_responseFILE, false) << "\r\n";
     }
     return (_responseHeaders.str());
 }

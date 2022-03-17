@@ -1,8 +1,8 @@
 
 #pragma once
-#include "../../parser/server_parser.hpp"
-#include "../../parser/request_parser.hpp"
-#include "../../parser/location_parser.hpp"
+#include "../parser/server_parser.hpp"
+#include "../parser/request_parser.hpp"
+#include "../parser/location_parser.hpp"
 #include <algorithm>
 #include <dirent.h>
 #include <sys/stat.h>
