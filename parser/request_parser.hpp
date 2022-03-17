@@ -1,6 +1,8 @@
 #pragma once
 
 #include "utils.hpp"
+#include <fcntl.h>
+#include <unistd.h>
 
 class request_parser
 {

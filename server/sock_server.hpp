@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   sock_server.hpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: abahdir <abahdir@student.42.fr>            +#+  +:+       +#+        */
+/*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:52 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/03/17 14:20:59 by abahdir          ###   ########.fr       */
+/*   Updated: 2022/03/17 16:56:22 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,39 +39,15 @@ class SRR
         size_t Length_read;
         int     _number_request;
         size_t FileLength;
-        SRR(){};
-        SRR(std::string _type_sock, server_parser _server, std::string _filename)
-        {
-            Length_read = 0;
-            this->_type_sock = _type_sock;
-            this->_server = _server;
-            this->_number_request = 0;
-            this->FileLength = 0;
-            if(!_filename.empty())
-            {
-                _response = NULL;
-                _request = new request_parser("/tmp/" + _filename);
-            }
-            
-        }
-        std::string get_type_sock(){return _type_sock;}
-        server_parser get_server(){return _server;}
-        request_parser *get_request_parser(){return _request;}
-        Responder *get_responser(){return _response;}
-        void set_responser(Responder * response){this->_response = response;}
-        void set_request_parser(request_parser *_request){this->_request = _request;}
-        size_t _getFileLength(std::string _fpath)
-        {
-            std::ifstream _file;
-            size_t length;
-
-            _file.open (_fpath.c_str(), std::ios::binary);
-            _file.seekg (0, std::ios::end);
-            length = _file.tellg();
-            _file.close();
-            return (length);
-        }
-        //std::string get_response(){return server;}
+        SRR();
+        SRR(std::string _type_sock, server_parser _server, std::string _filename);
+        std::string get_type_sock();
+        server_parser get_server();
+        request_parser *get_request_parser();
+        Responder *get_responser();
+        void set_responser(Responder * response);
+        void set_request_parser(request_parser *_request);
+        size_t _getFileLength(std::string _fpath);
         
 };
 

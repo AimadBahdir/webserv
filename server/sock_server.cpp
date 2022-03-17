@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   sock_server.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: abahdir <abahdir@student.42.fr>            +#+  +:+       +#+        */
+/*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:36 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/03/17 14:27:48 by abahdir          ###   ########.fr       */
+/*   Updated: 2022/03/17 17:37:34 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -155,7 +155,6 @@ void sock_server::_recv(int connectionServerSockFD)
                 FD_SET(connectionServerSockFD, &FDs_writability);
                 FD_CLR(connectionServerSockFD, &FDs_readability);
             }
-            std::cout << "tmp"<< temp->getPath() << std::endl;
         }
         catch(const char *str) {
             //std::cout << str << std::endl;
@@ -165,26 +164,25 @@ void sock_server::_recv(int connectionServerSockFD)
 
 void sock_server::_send(int connectionServerSockFD, server_parser srv)
 {
-    (void)srv;
-
     SRR *srr = (M_FSRR.find(connectionServerSockFD))->second; 
-    //std::pair<std::string, std::string> paiir("HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 68\nConnection: keep-alive\nCache-Control: max-age=0\nUpgrade-Insecure-Requests: 1\nCookie: PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1\nUser-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML] = like Gecko) Chrome/89.0.4389.114 Safari/537.36\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9\nSec-Fetch-Site: cross-site\nSec-Fetch-Mode: navigate\nSec-Fetch-User: ?1\nSec-Fetch-Dest: document\nAccept-Encoding: gzip, deflate, br\nAccept-Language: en-US,en;q=0.9\n", "/Users/wben-sai/Desktop/webser3/server/response");
-    
-    Responder *temp = srr->get_responser();
-    if(temp == NULL)
-        srr->set_responser(new Responder(*srr->get_request_parser(), srv));
-        
-    std::pair<std::string, std::string> paiir = temp->response();
     std::string res;
+    char buf[10241];
+    int len_read;
+    
+    //check response
+    if(srr->get_responser() == NULL)
+        srr->set_responser(new Responder(*srr->get_request_parser(), srv));
+    Responder *temp  = srr->get_responser();
+    std::pair<std::string, std::string> pair_response = temp->response();
+    
     if(srr->FileLength == 0)
     {   
-        srr->FileLength = srr->_getFileLength(paiir.second);
-        srr->file_response = open(paiir.second.c_str(), O_RDONLY);
-        res = paiir.first;
+        srr->FileLength = srr->_getFileLength(pair_response.second);
+        srr->file_response = open(pair_response.second.c_str(), O_RDONLY);
+        res = pair_response.first;
     }
         
-    char buf[10241];
-    int len_read = read(srr->file_response, buf, (sizeof(char) * 10240));
+    len_read = read(srr->file_response, buf, (sizeof(char) * 10240));
     if(len_read != -1)
     {
         buf[len_read] = '\0';
@@ -192,8 +190,6 @@ void sock_server::_send(int connectionServerSockFD, server_parser srv)
     }
     
     res += buf;
-    
-    std::cout <<"res = "<< res << std::endl;
     
     send(connectionServerSockFD, res.c_str() , res.length(), 0);
 
@@ -204,8 +200,9 @@ void sock_server::_send(int connectionServerSockFD, server_parser srv)
         close(srr->file_response);
         FD_SET(connectionServerSockFD, &FDs_readability);
         FD_CLR(connectionServerSockFD, &FDs_writability);
-        std::map<std::string, std::string>::iterator it = (srr->get_request_parser()->getHeaders()).find("Connection");
-        if(it != (srr->get_request_parser()->getHeaders()).end() && it->second == "Close")
+        std::map<std::string, std::string> _headers = srr->get_request_parser()->getHeaders();
+        std::map<std::string, std::string>::iterator it = _headers.find("Connection");
+        if(it != _headers.end() && it->second == "Close")
         {
             FD_CLR(connectionServerSockFD, &FDs_readability);
             close(connectionServerSockFD);
@@ -213,7 +210,9 @@ void sock_server::_send(int connectionServerSockFD, server_parser srv)
         srr->_number_request++;
         std::string file_name = std::to_string(std::time(nullptr)) + "_" + std::to_string(connectionServerSockFD)+ "_" + std::to_string(srr->_number_request);
         delete srr->get_request_parser();
-        srr->get_request_parser()->removeFile();
+        delete srr->get_responser();
+        srr->set_responser(NULL);
+        //srr->get_request_parser()->removeFile();
         srr->set_request_parser(new request_parser("/tmp/" + file_name));
     }
 }
@@ -257,3 +256,39 @@ void sock_server::ManagementFDs()
     }
 }   
    
+//----------------------------
+SRR::SRR(){}
+
+SRR::SRR(std::string _type_sock, server_parser _server, std::string _filename)
+{
+    
+    Length_read = 0;
+    this->_type_sock = _type_sock;
+    this->_server = _server;
+    this->_number_request = 0;
+    this->FileLength = 0;
+    if(!_filename.empty())
+    {
+        _response = NULL;
+        _request = new request_parser("/tmp/" + _filename);
+    }
+}
+
+size_t SRR::_getFileLength(std::string _fpath)
+{
+    std::ifstream _file;
+    size_t length;
+
+    _file.open (_fpath.c_str(), std::ios::binary);
+    _file.seekg (0, std::ios::end);
+    length = _file.tellg();
+    _file.close();
+    return (length);
+}
+
+std::string SRR::get_type_sock(){return _type_sock;}
+server_parser SRR::get_server(){return _server;}
+request_parser* SRR::get_request_parser(){return _request;}
+Responder* SRR::get_responser(){return _response;}
+void SRR::set_responser(Responder * response){this->_response = response;}
+void SRR::set_request_parser(request_parser *_request){this->_request = _request;}
