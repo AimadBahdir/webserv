@@ -130,36 +130,38 @@ bool    Responder::_setIndexs(void)
 void    Responder::_prepareResponse(void)
 {
     struct stat _fstats;
+    if (!this->_location.getLocationPath().empty())
+    {
+        if (!this->_location.getRedirection().first.empty())
+        {
+            this->_REDIRECT = true;
+            this->_statusCode = this->_location.getRedirection().first;
+            return;
+        } else if (!this->_location.getUploadPath().empty()
+        && this->_request.getMethode().compare("POST") == 0)
+        {
+            this->_UPLOAD = true;
+            this->_statusCode = "200";
+        }
+        else if (!this->_location.getCgiPath().empty())
+        {
+            this->_CGI = true;
+            this->_statusCode = "200";
+            return;
+        }
+        else if (this->_setIndexs())
+            this->_statusCode = "200";
+        else if (this->_location.getAutoIndex())
+            this->_statusCode = "200";
+        else
+            this->_statusCode = "403";
+    }
     if (stat(this->_rootPath.c_str(), &_fstats) == 0)
     {
         if (S_ISDIR(_fstats.st_mode))
         {
             if(open(this->_rootPath.c_str(), O_RDONLY) == -1)
                 this->_statusCode = "403";
-            else if (!this->_location.getLocationPath().empty())
-            {
-                if (!this->_location.getRedirection().first.empty())
-                {
-                    this->_REDIRECT = true;
-                    this->_statusCode = this->_location.getRedirection().first;
-                } else if (!this->_location.getUploadPath().empty()
-                && this->_request.getMethode().compare("POST") == 0)
-                {
-                    this->_UPLOAD = true;
-                    this->_statusCode = "200";
-                }
-                else if (!this->_location.getCgiPath().empty())
-                {
-                    this->_CGI = true;
-                    this->_statusCode = "200";
-                }
-                else if (this->_setIndexs())
-                    this->_statusCode = "200";
-                else if (this->_location.getAutoIndex())
-                    this->_statusCode = "200";
-                else
-                    this->_statusCode = "403";
-            }
             else
                 this->_setIndexs();
         }
@@ -192,8 +194,10 @@ void    Responder::_prepareResponse(void)
     }
     else
     {
-        std::cout << "ERRNO: " << errno << " | " << this->_rootPath << std::endl;
-        this->_statusCode = "404";
+        if (errno == 2)
+            this->_statusCode = "404";
+        else
+            this->_statusCode = "403";
     }
 }
 
@@ -345,7 +349,7 @@ void Responder::_setCGIResponseFile(std::string _path)
 
 Responder::RESPONSE_DATA Responder::_cgiResponse(void)
 {
-    std::stringstream _headers;
+    std::stringstream _headers, _cgiHeaders;
     std::ifstream _file;
     std::string _line;
 
@@ -354,8 +358,6 @@ Responder::RESPONSE_DATA Responder::_cgiResponse(void)
 
     std::string _path = std::string("/tmp/"+_getDateTime(true));
     this->_setCGIResponseFile(_path);
-    _headers << this->_generateHeaders("");
-    _headers << "Content-Length: "<< this->_getFileLength(_path) <<"\r\n";
     _file.open(_path, std::ios::in);
     size_t _len = 0;
     if (_file.is_open())
@@ -363,17 +365,26 @@ Responder::RESPONSE_DATA Responder::_cgiResponse(void)
         while (std::getline(_file, _line))
         {
             _len++;
+            std::string _status =  _line.substr(0, std::string("Status: ").length());
+            if (_status.compare("Status: ") == 0)
+            {
+                this->_statusCode = _line.substr(std::string("Status: ").length(), 3);
+                continue;
+            }
             if (_line.compare("\r") == 0)
             {
                 _file.close();
                 break;
             }
-            _headers << _line;
+            _cgiHeaders << _line << "\n";
         }
         std::stringstream _cmd;
         _cmd << "sed -e '1," << _len << "d' <" << _path << " > " << _path << "_";
         system(_cmd.str().c_str());
     }
+    _headers << this->_generateHeaders("");
+    _headers << _cgiHeaders.str();
+    _headers << "Content-Length: "<< this->_getFileLength(_path+"_") <<"\r\n";
     return (std::make_pair(_headers.str()+"\n\r", std::string(_path+"_")));
 }
 

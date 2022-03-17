@@ -1,4 +1,4 @@
-GET /goinfre/abahdir/nginxTest/home.php HTTP/1.1
+POST /goinfre/abahdir/nginxTest/ HTTP/1.1
 Content-Type: text/html
 Host: 1sadf
 Connection: keep-alive
