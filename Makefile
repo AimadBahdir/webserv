@@ -13,3 +13,6 @@ clean:
 fclean: clean
 
 re: fclean all
+
+r: re
+	@./webserv file.conf
