@@ -378,7 +378,6 @@ Responder::RESPONSE_DATA Responder::_cgiResponse(void)
     _headers << this->_generateHeaders("");
     _headers << _cgiHeaders.str();
     _headers << "Content-Length: "<< this->_getFileLength(_path+"_") <<"\r\n";
-    std::cout << _headers.str() << "BODY:" << std::string(_path+"_") << std::endl;
     return (std::make_pair(_headers.str()+"\n\r", std::string(_path+"_")));
 }
 
@@ -779,4 +778,7 @@ std::string Responder::_getMimeType(std::string _toFind, bool _findExt = false)
     return (it->second);
 }
 
-Responder::~Responder() {}
+Responder::~Responder()
+{
+    system("rm -rf /tmp/WSRSP*");
+}
