@@ -311,7 +311,10 @@ char**  Responder::_EnvarCGI()
 void Responder::_setCGIResponseFile(std::string _path)
 {
     int _outfd = open(_path.c_str(), O_CREAT | O_RDWR , 0400);
-    int _infd = open(this->_request.getBodyFile().c_str(), O_RDONLY);
+    int _infd = -1;
+    if (this->_request.getMethode().compare("GET") != 0)
+        _infd = open(this->_request.getBodyFile().c_str(), O_RDONLY);
+
     char** _cmd = (char **)malloc(3 * sizeof(char*));
     _cmd[0] = strdup(this->_location.getCgiPath().c_str());
     _cmd[1] = strdup(this->_indexPath.c_str());
@@ -324,23 +327,27 @@ void Responder::_setCGIResponseFile(std::string _path)
     {
         if (dup2(_outfd, STDOUT_FILENO) == -1)
             exit(1);
-        if (dup2(_infd, STDIN_FILENO) == -1)
+        if (_infd != -1 && dup2(_infd, STDIN_FILENO) == -1)
             exit(1);
         if(execve(*_cmd, _cmd, _EnvarCGI()) == -1)
         {
             this->_statusCode = "500";
+            if (_infd != -1)
+                close(_infd);
             close(_outfd);
             exit(errno);
         }
+        if (_infd != -1)
+            close(_infd);
         close(_outfd);
-        close(_infd);
         exit(0);
     }
     else
     {
         waitpid(_pid, 0, 0);
+        if (_infd != -1)
+            close(_infd);
         close(_outfd);
-        close(_infd);
     }
 }
 
