@@ -6,7 +6,7 @@
 /*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:52 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/03/19 12:43:48 by wben-sai         ###   ########.fr       */
+/*   Updated: 2022/03/19 16:01:19 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,8 +66,8 @@ class sock_server
         int  _select();
         void _accept(int fd_sock, server_parser srv);
         void _recv(int connectionServerSockFD);
-        void _send(int connectionServerSockFD, server_parser srv);
-        void ManagementFDs();
+        void _send(int connectionServerSockFD, server_parser srv, std::vector<server_parser> servers);
+        void ManagementFDs(std::vector<server_parser> servers);
        
     public:
         sock_server(std::vector<server_parser> servers);
