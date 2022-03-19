@@ -439,8 +439,18 @@ Responder::RESPONSE_DATA Responder::_staticResponse(void)
 Responder::RESPONSE_DATA Responder::_uploadFile(void) 
 {
     
-
-    return (std::make_pair("UPLOADHEADERS", "UPLOADBODY"));
+    int _fd  = open(this->_location.getUploadPath().c_str(), O_RDONLY);
+    if (_fd == -1)
+    {
+        this->_statusCode = "500";
+        close(_fd);
+        return (this->_staticResponse());
+    }
+    std::string _fileName = "WSUPLOAD"+this->_getDateTime(true)+"."+this->_getMimeType(this->_request.getHeaders().find("Content-Type")->second, true);
+    system(std::string("cp -r "+this->_request.getBodyFile()+" "+this->_trimPath(this->_location.getUploadPath()+"/"+_fileName)).c_str());
+    system("echo 'UPLOADED SUCCESFULY' > /tmp/WSRSP00");
+    close(_fd);
+    return (std::make_pair(this->_generateHeaders("/tmp/WSRSP00")+"\r\n", "/tmp/WSRSP00"));
 }
 
 std::string Responder::_indexOfPage(std::string _root, std::string _dir)

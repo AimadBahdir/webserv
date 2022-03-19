@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   sock_server.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
+/*   By: abahdir <abahdir@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:36 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/03/19 13:23:59 by wben-sai         ###   ########.fr       */
+/*   Updated: 2022/03/19 13:37:07 by abahdir          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -211,10 +211,10 @@ void sock_server::_send(int connectionServerSockFD, server_parser srv)
         }
         srr->_number_request++;
         std::string file_name = std::to_string(std::time(nullptr)) + "_" + std::to_string(connectionServerSockFD)+ "_" + std::to_string(srr->_number_request);
+        srr->get_request_parser()->removeFile();
         delete srr->get_request_parser();
         delete srr->get_responser();
         srr->set_responser(NULL);
-        srr->get_request_parser()->removeFile();
         srr->set_request_parser(new request_parser("/tmp/" + file_name));
     }
 }

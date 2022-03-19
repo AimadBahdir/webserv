@@ -48,16 +48,7 @@ request_parser      &request_parser::operator=(request_parser const &src)
 
 void				request_parser::removeFile()
 {
-	int res = -1;
-	if(bodyFile != "")
-		res = open(bodyFile.c_str(), O_RDONLY);
-	if(res != -1)
-	{
-		if(bodyFile != "" && remove(bodyFile.c_str()) == 0 )
-    		std::cout << "File successfully deleted" << std::endl;
-		close(res);
-	}
-    	
+	system(std::string("rm -rf "+bodyFile).c_str());
 }
 
 
