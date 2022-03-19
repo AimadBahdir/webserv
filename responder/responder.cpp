@@ -28,7 +28,8 @@ Responder& Responder::operator=(Responder const & r)
 bool    Responder::_errorsChecker(void)
 {
     std::map<std::string, std::string> _headers = this->_request.getHeaders();
-    if ((this->_server.getMaxSzie() > 0 && this->_server.getMaxSzie() < (int)this->_getFileLength(this->_request.getBodyFile()))
+    if ( this->_request.getMethode().empty() || this->_request.getPath().empty() || this->_request.getVersion().empty()
+    || (this->_server.getMaxSzie() > 0 && this->_server.getMaxSzie() < (int)this->_getFileLength(this->_request.getBodyFile()))
     || (_headers.find("Content-Length") != _headers.end() && _headers.find("Transfer-Encoding") != _headers.end())
     || (_headers.find("Host") == _headers.end()))
     {
