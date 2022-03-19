@@ -2,10 +2,10 @@ const { Pool, Client } = require('pg')
 
 
 const client = new Client({
-    user: 'leet_admin',
+    user: 'admin',
     host: 'localhost',
     database: 'webserv',
-    password: 'leetask_tst',
+    password: '123456',
     port: 5432,
 });
 
@@ -23,7 +23,7 @@ const execute = async (query) => {
     }
 };
 
-let text = `DELETE FROM USERS WHERE NAME='MAMOUSSA'`;
+let text = `DELETE FROM USERS WHERE NAME='AIMAD'`;
 
 execute(text).then(result => {
     if (result) {

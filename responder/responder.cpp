@@ -800,5 +800,5 @@ std::string Responder::_getMimeType(std::string _toFind, bool _findExt = false)
 
 Responder::~Responder()
 {
-    // system("rm -rf /tmp/WSRSP*");
+    system("rm -rf /tmp/WSRSP*");
 }
