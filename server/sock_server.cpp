@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   sock_server.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: abahdir <abahdir@student.42.fr>            +#+  +:+       +#+        */
+/*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:36 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/03/18 19:19:45 by abahdir          ###   ########.fr       */
+/*   Updated: 2022/03/19 13:23:59 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,8 +46,6 @@ int sock_server::_create_socket(server_parser srv)
             ...
         protocol
             IP      0       # internet protocol
-            TCP     6       # transmission control protocol
-            UDP     17      # user datagram protocol 
             ...
     ---------------------------------------------------------------------------------------- */
     int fd_sock;
@@ -72,10 +70,9 @@ void sock_server::_bind(int fd_sock ,size_t port, std::string host)
         sockfd : the socket descriptor
         addr : we determine the adress based on the used family.
            |  AF_UNIX Family  |                                    AF_INET Family                                             |                             |
-           |       ...        |   struct sockAddress;                                                                         |
-           |       ...        |   memset(&sockAddress, 0, sizeog(sockAdress));                                                |
+           |       ...        |   struct sockAddress;                                                                         |                                |
            |       ...        |   sockAddress.sinfamily = AF_INET;                        // define the used domain           |    
-           |       ...        |   sockAddress.sin_port = htons(5000);                     // sudo setstat -ntlp               |    
+           |       ...        |   sockAddress.sin_port = htons();                         // sudo setstat -ntlp               |    
            |       ...        |   sockAddress.sin_addr.s_addr = htonl(INADDR_ANY);        // Prmit any incoming IP adrress    |        
            |       ...        |              "                = inet_addr("127.0.0.1");   // Prmit any client request         |    
         addrlen : sizeof(sockAddress);
@@ -117,14 +114,13 @@ void sock_server::_accept(int fd_sock, server_parser srv)
     /* ----------------------------------------------------------------------------------------
     int accept(int sockfd, struct sockaddr *restrict addr, socklen_t *restrict addrlen);
         sockfd : the socket descriptor
-        addr : where the address of the connecting socket shall be return
+        addr : An optional pointer to a buffer that receives the address of the connecting entity
         addrlen : sizeof (addr)
         -- Note : accept() is blocking : wait for connection before returning
         -- Note : listen() is used by the server only as a way to get new sockets.
     ---------------------------------------------------------------------------------------- */
     
     int connectionServerSockFD = accept(fd_sock, NULL, 0);
-    //fcntl(new_fd, F_SETFL, O_NONBLOCK); /* Change the socket into non-blocking state	*/
     if(connectionServerSockFD == -1) 
     {
         std::cout << "Failed to accept connection request" << std::endl;
@@ -132,7 +128,7 @@ void sock_server::_accept(int fd_sock, server_parser srv)
     }
     else
     {
-        std::cout << "Client with Id " << connectionServerSockFD << " is connect" << std::endl; 
+        //std::cout << "Client with Id " << connectionServerSockFD << " is connect" << std::endl; 
         FD_SET(connectionServerSockFD, &FDs_readability);
         std::string file_name = std::to_string(std::time(nullptr)) + "_" + std::to_string(connectionServerSockFD);
         M_FSRR.insert(std::make_pair(connectionServerSockFD, new SRR("connection_socket",srv, file_name)));
@@ -147,7 +143,7 @@ void sock_server::_recv(int connectionServerSockFD)
     {
         FD_CLR(connectionServerSockFD, &FDs_readability);
         close(connectionServerSockFD);
-        std::cout << "Client with Id " << connectionServerSockFD << " is disconnect" << std::endl;
+        //std::cout << "Client with Id " << connectionServerSockFD << " is disconnect" << std::endl;
     }
     else
     {
@@ -218,7 +214,7 @@ void sock_server::_send(int connectionServerSockFD, server_parser srv)
         delete srr->get_request_parser();
         delete srr->get_responser();
         srr->set_responser(NULL);
-        //srr->get_request_parser()->removeFile();
+        srr->get_request_parser()->removeFile();
         srr->set_request_parser(new request_parser("/tmp/" + file_name));
     }
 }
@@ -262,9 +258,31 @@ void sock_server::ManagementFDs()
         }
     }
 }   
-   
+
+sock_server::~sock_server()
+{
+    std::map<int, SRR *>::iterator it = M_FSRR.begin();
+    std::map<int, SRR *>::iterator it2 = M_FSRR.end();
+    while(it != it2)
+    {
+        delete it->second;
+        it++;
+    }
+    M_FSRR.clear();
+}
+
 //----------------------------
+
 SRR::SRR(){}
+
+SRR::~SRR()
+{
+    if(_request != NULL)
+        delete _request;
+    if(_response != NULL)
+        delete _response;
+    
+}
 
 SRR::SRR(std::string _type_sock, server_parser _server, std::string _filename)
 {

@@ -6,7 +6,7 @@
 /*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:52 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/03/17 16:56:22 by wben-sai         ###   ########.fr       */
+/*   Updated: 2022/03/19 12:43:48 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,7 @@ class SRR
         int     _number_request;
         size_t FileLength;
         SRR();
+        ~SRR();
         SRR(std::string _type_sock, server_parser _server, std::string _filename);
         std::string get_type_sock();
         server_parser get_server();
