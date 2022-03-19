@@ -200,13 +200,11 @@ void				request_parser::sendLine(std::string _line)
 			std::vector<std::string> tokens = ft_split(requestHeader, "\r\n");
 			std::vector<std::string>::iterator it = tokens.begin();
 
-			if (!setRequestLine(*it))
-				throw "Request Error: Request Line failed !!";
+			setRequestLine(*it);
 			it++;
 			for(; it < tokens.end(); it++)
 			{
-				if(!set_requestDirectives(*it))
-					throw "Request Error: Set Request Header failed !!";
+				set_requestDirectives(*it);
 			}
 			if((isChunked == 0 && bodyLength == 0))
 			{
