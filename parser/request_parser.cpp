@@ -27,7 +27,6 @@ request_parser      &request_parser::operator=(request_parser const &src)
 	if (this == &src)
 		return *this;
 
-	error =  src.error;
 	methode = src.methode;
 	path = src.path;
 	queries = src.queries;
@@ -209,7 +208,7 @@ void				request_parser::sendLine(std::string _line)
 				if(!set_requestDirectives(*it))
 					throw "Request Error: Set Request Header failed !!";
 			}
-			if((methode == "GET") || (isChunked == 0 && bodyLength == 0))
+			if((isChunked == 0 && bodyLength == 0))
 			{
 				status = 1;
 				return ;
@@ -277,3 +276,10 @@ void				request_parser::sendLine(std::string _line)
 }
 
 
+std::string                         	request_parser::getMethode() { return methode; }
+std::string                         	request_parser::getPath() { return path; }
+std::string                         	request_parser::getQueries() { return queries; }
+std::string                         	request_parser::getVersion() { return version; }
+std::map<std::string, std::string>  	request_parser::getHeaders() { return headers; }
+std::string                         	request_parser::getBodyFile() { return bodyFile;}
+int										request_parser::getStatus(){return status; }
