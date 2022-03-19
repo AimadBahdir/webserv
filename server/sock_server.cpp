@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   sock_server.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: abahdir <abahdir@student.42.fr>            +#+  +:+       +#+        */
+/*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:36 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/03/19 21:22:48 by abahdir          ###   ########.fr       */
+/*   Updated: 2022/03/19 21:47:52 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 sock_server::sock_server(std::vector<server_parser> servers)
 {
     int fd_sock;
+    bool is_bind;
     if(servers.size() == 0)
         exit(2);
 
@@ -22,14 +23,27 @@ sock_server::sock_server(std::vector<server_parser> servers)
     FD_ZERO(&FDs_writability_copy);
     FD_ZERO(&FDs_readability);
     FD_ZERO(&FDs_writability);
+    FD_ZERO(&FDs_check);
+    FD_ZERO(&FDs_check_copy);
     
     for (std::vector<server_parser>::iterator it = servers.begin(); it != servers.end(); it++)
     {
-        fd_sock = _create_socket(*it);
-        _bind(fd_sock, it->getPort(), it->getHost());
-        _listen(fd_sock);
+        std::map<int, SRR *>::iterator begin = M_FSRR.begin();
+        is_bind = false;
+        while(begin != M_FSRR.end())
+        {
+            if((begin->second)->get_server().getPort() == it->getPort() && (begin->second)->get_server().getHost() == it->getHost())
+                is_bind = true;
+            begin++;
+        }
+        if (!is_bind)
+        {
+            fd_sock = _create_socket(*it);
+            _bind(fd_sock, it->getPort(), it->getHost());
+            _listen(fd_sock);
+        }
     }
-    ManagementFDs();
+    ManagementFDs(servers);
 }
 
 int sock_server::_create_socket(server_parser srv)
@@ -43,10 +57,8 @@ int sock_server::_create_socket(server_parser srv)
         type 
             SOCK_STREAM : TCP
             SOCK_DGRAM : UDP
-            ...
         protocol
             IP      0       # internet protocol
-            ...
     ---------------------------------------------------------------------------------------- */
     int fd_sock;
     if ((fd_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
@@ -100,7 +112,7 @@ void sock_server::_listen(int fd_sock)
         -- Note : listen() is non-blocking : return immediately.
     ---------------------------------------------------------------------------------------- */
     
-    if (listen(fd_sock, 1) == 0)
+    if (listen(fd_sock, 1337) == 0)
         std::cout << "listenning ..." << std::endl;
     else
     {
@@ -142,6 +154,10 @@ void sock_server::_recv(int connectionServerSockFD)
     if(lenString == 0)
     {
         FD_CLR(connectionServerSockFD, &FDs_readability);
+        std::map<int, SRR *>::iterator it = M_FSRR.find(connectionServerSockFD);
+        if(it != M_FSRR.end())
+            delete it->second;
+        M_FSRR.erase(connectionServerSockFD);
         close(connectionServerSockFD);
         //std::cout << "Client with Id " << connectionServerSockFD << " is disconnect" << std::endl;
     }
@@ -164,16 +180,39 @@ void sock_server::_recv(int connectionServerSockFD)
     }
 }
 
-void sock_server::_send(int connectionServerSockFD, server_parser srv)
+void sock_server::_send(int connectionServerSockFD, server_parser srv, std::vector<server_parser> servers)
 {
     SRR *srr = (M_FSRR.find(connectionServerSockFD))->second; 
     std::string res;
     char buf[10241];
-    int len_read;
+    int len_read = 0;
     
-    //check response
     if(srr->get_responser() == NULL)
-        srr->set_responser(new Responder(*srr->get_request_parser(), srv));
+    {
+        std::vector<server_parser>::iterator it_servers = servers.begin();
+        request_parser *request = srr->get_request_parser();
+        while (it_servers != servers.end())
+        {
+            if (srv.getPort() == it_servers->getPort() && it_servers->getHost() == it_servers->getHost())
+            {
+                std::map<std::string, std::string> _headers = request->getHeaders();
+                std::map<std::string, std::string>::iterator it_headers = _headers.find("Host");
+                if (it_headers != _headers.end())
+                {
+                    std::vector<std::string> _serverNames = it_servers->getNames();
+                    if (_serverNames.size() > 0)
+                    {
+                        std::vector<std::string>::iterator it_server_names = std::find(_serverNames.begin(), _serverNames.end(), it_headers->second);
+                        if (it_server_names != _serverNames.end())
+                            srv = (*it_servers);
+                        it_server_names++;
+                    }
+                }
+            }
+            it_servers++;
+        }
+        srr->set_responser(new Responder(*request, srv));
+    }
     Responder *temp  = srr->get_responser();
     std::pair<std::string, std::string> pair_response = temp->response();
     
@@ -181,10 +220,20 @@ void sock_server::_send(int connectionServerSockFD, server_parser srv)
     {   
         srr->FileLength = srr->_getFileLength(pair_response.second);
         srr->file_response = open(pair_response.second.c_str(), O_RDONLY);
+        FD_SET(srr->file_response, &FDs_check);
         res = pair_response.first;
     }
-        
-    len_read = read(srr->file_response, buf, (sizeof(char) * 10240));
+    FDs_check_copy = FDs_check;
+    int is_ready = select(srr->file_response + 1, &FDs_check_copy, NULL, NULL, 0);
+    if (is_ready == -1)
+    {
+        std::cout << "Select failed" <<  std::endl;
+        exit(1);
+    }
+    
+    if (FD_ISSET(srr->file_response, &FDs_check_copy)) 
+        len_read = read(srr->file_response, buf, (sizeof(char) * 10240));
+    
     if(len_read != -1)
     {
         buf[len_read] = '\0';
@@ -193,15 +242,25 @@ void sock_server::_send(int connectionServerSockFD, server_parser srv)
     
     res += buf;
     
-    send(connectionServerSockFD, res.c_str() , res.length(), 0);
-
-    if(srr->Length_read == srr->FileLength)
+    if (send(connectionServerSockFD, res.c_str() , res.length(), 0) == -1)
+    {
+        FD_CLR(connectionServerSockFD, &FDs_writability);
+        FD_CLR(srr->file_response, &FDs_check);
+        std::map<int, SRR *>::iterator it = M_FSRR.find(connectionServerSockFD);
+        if(it != M_FSRR.end())
+            delete it->second;
+        M_FSRR.erase(connectionServerSockFD);
+        close(connectionServerSockFD);
+        close(srr->file_response);
+    }
+    else if(srr->Length_read == srr->FileLength)
     {
         srr->Length_read = 0;
         srr->FileLength = 0;
         close(srr->file_response);
         FD_SET(connectionServerSockFD, &FDs_readability);
         FD_CLR(connectionServerSockFD, &FDs_writability);
+        FD_CLR(srr->file_response, &FDs_check);
         std::map<std::string, std::string> _headers = srr->get_request_parser()->getHeaders();
         std::map<std::string, std::string>::iterator it = _headers.find("Connection");
         if(it != _headers.end() && it->second == "Close")
@@ -231,7 +290,7 @@ int sock_server::_select()
 }
 
 
-void sock_server::ManagementFDs()
+void sock_server::ManagementFDs(std::vector<server_parser> servers)
 {
     
     while (true)
@@ -245,7 +304,7 @@ void sock_server::ManagementFDs()
             {
                 if (FD_ISSET(it->first , &FDs_writability_copy))
                 {
-                    _send(it->first, (it->second)->get_server());
+                    _send(it->first, (it->second)->get_server(), servers);
                 }
                 else if (FD_ISSET(it->first , &FDs_readability_copy)) 
                 {

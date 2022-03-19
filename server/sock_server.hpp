@@ -6,7 +6,7 @@
 /*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:52 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/03/19 16:01:19 by wben-sai         ###   ########.fr       */
+/*   Updated: 2022/03/19 21:34:43 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,6 +57,7 @@ class sock_server
     private:
         fd_set FDs_readability, FDs_writability;
         fd_set FDs_readability_copy, FDs_writability_copy;
+        fd_set FDs_check, FDs_check_copy;
         
         std::map<int, SRR *> M_FSRR; 
         
