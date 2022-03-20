@@ -6,7 +6,7 @@
 /*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:52 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/03/20 10:29:28 by wben-sai         ###   ########.fr       */
+/*   Updated: 2022/03/20 18:46:34 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,7 @@ class SRR
         request_parser *_request;
         Responder *_response;
     public:
-        size_t file_response;
+        int file_response;
         size_t Length_read;
         int     _number_request;
         size_t FileLength;
@@ -66,7 +66,7 @@ class sock_server
         int  _select();
         void _accept(int fd_sock, server_parser srv);
         bool _recv(int connectionServerSockFD);
-        void _send(int connectionServerSockFD, server_parser srv, std::vector<server_parser> servers);
+        bool _send(int connectionServerSockFD, server_parser srv, std::vector<server_parser> servers);
         void ManagementFDs(std::vector<server_parser> servers);
        
     public:
