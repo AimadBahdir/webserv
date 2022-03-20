@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   sock_server.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
+/*   By: abahdir <abahdir@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:36 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/03/20 21:13:15 by wben-sai         ###   ########.fr       */
+/*   Updated: 2022/03/20 22:27:36 by abahdir          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -147,7 +147,6 @@ void sock_server::_accept(int fd_sock, server_parser srv)
         //std::cout << "Client with Id " << connectionServerSockFD << " is connect" << std::endl; 
         FD_SET(connectionServerSockFD, &FDs_readability);
         std::string file_name = std::to_string(std::time(NULL)) + "_" + std::to_string(connectionServerSockFD);
-        std::cout << "accepted client " << connectionServerSockFD << std::endl;
         M_FSRR.insert(std::make_pair(connectionServerSockFD, new SRR("connection_socket",srv, file_name)));
     }
 }
@@ -237,8 +236,8 @@ bool sock_server::_send(int connectionServerSockFD, server_parser srv, std::vect
         buf[len_read] = '\0';
         srr->Length_read += len_read;
     }
-    res += buf;
-    
+    std::string tempd(buf, len_read);
+    res = res + tempd;
     if (send(connectionServerSockFD, res.c_str() , res.length(), 0) == -1)
     {
         FD_CLR(connectionServerSockFD, &FDs_writability);
@@ -309,7 +308,6 @@ void sock_server::ManagementFDs(std::vector<server_parser> servers)
             {
                 if (FD_ISSET(it->first , &FDs_writability_copy))
                 {
-                    std::cout << "ready " << it->first << std::endl;
                     if( _send(it->first, (it->second)->get_server(), servers))
                         break;
                 }
