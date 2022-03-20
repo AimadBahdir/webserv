@@ -366,26 +366,30 @@ Responder::RESPONSE_DATA Responder::_cgiResponse(void)
     {
         while (std::getline(_file, _line))
         {
-            _len++;
             std::string _status =  _line.substr(0, std::string("Status: ").length());
             if (_status.compare("Status: ") == 0)
             {
                 this->_statusCode = _line.substr(std::string("Status: ").length(), 3);
                 continue;
             }
-            if (_line.compare("\r") == 0)
+            if (_line.compare("\r") == 0 || _line.find(": ") == std::string::npos)
             {
                 _file.close();
                 break;
             }
+            _len++;
             _cgiHeaders << _line << "\n";
         }
         std::stringstream _cmd;
-        _cmd << "sed -e '1," << _len << "d' <" << _path << " > " << _path << "_";
+        if (_len > 0)
+            _cmd << "sed -e '1," << _len << "d' <" << _path << " > " << _path << "_";
+        else
+            _cmd << "cat < " << _path << " > " << _path << "_";
         system(_cmd.str().c_str());
     }
     _headers << this->_generateHeaders("");
-    _headers << _cgiHeaders.str();
+    if (!_cgiHeaders.str().empty())
+        _headers << _cgiHeaders.str();
     _headers << "Content-Length: "<< this->_getFileLength(_path+"_") <<"\r\n";
     return (std::make_pair(_headers.str()+"\n\r", std::string(_path+"_")));
 }

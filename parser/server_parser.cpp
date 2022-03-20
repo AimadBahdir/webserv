@@ -112,10 +112,10 @@ bool						server_parser::setMaxSize(std::vector<std::string> tokens)
 {
 	if(tokens.size() != 2)
 		return false;
-	if(!is_digit(tokens[1]) || tokens[1].length() > 4)
+	if(!is_digit(tokens[1]) || tokens[1].length() > 6)
 		return false;
 	int tmp = atoi(tokens[1].c_str());
-	if (tmp < 0 || tmp > 100000)
+	if (tmp < 0 || tmp > 150000)
 		return false;
 	clientMaxBodySize = tmp;
 	id.size++;
