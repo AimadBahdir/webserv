@@ -6,7 +6,7 @@
 /*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:36 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/03/20 19:29:48 by wben-sai         ###   ########.fr       */
+/*   Updated: 2022/03/20 21:08:17 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -140,7 +140,6 @@ void sock_server::_accept(int fd_sock, server_parser srv)
     if(connectionServerSockFD == -1) 
     {
         std::cout << "Failed to accept connection request" << std::endl;
-         std::cout << strerror(errno);
         //exit(1);
     }
     else
@@ -242,11 +241,9 @@ bool sock_server::_send(int connectionServerSockFD, server_parser srv, std::vect
     
     if (send(connectionServerSockFD, res.c_str() , res.length(), 0) == -1)
     {
-        std::cout << connectionServerSockFD << std::endl;
         FD_CLR(connectionServerSockFD, &FDs_writability);
         close(connectionServerSockFD);
         close(srr->file_response);
-        std::cout << strerror(errno) << std::endl;
         std::map<int, SRR *>::iterator it = M_FSRR.find(connectionServerSockFD);
         if(it != M_FSRR.end())
             delete it->second;
@@ -255,7 +252,6 @@ bool sock_server::_send(int connectionServerSockFD, server_parser srv, std::vect
     }
     else if(srr->Length_read == srr->FileLength)
     {
-        std::cout <<"ddd " << srr->Length_read << std::endl;
         srr->Length_read = 0;
         srr->FileLength = 0;
         FD_SET(connectionServerSockFD, &FDs_readability);
@@ -263,7 +259,6 @@ bool sock_server::_send(int connectionServerSockFD, server_parser srv, std::vect
         std::map<std::string, std::string> _headers = srr->get_request_parser()->getHeaders();
         std::map<std::string, std::string>::iterator it = _headers.find("Connection");
         close(srr->file_response);
-        std::cout << connectionServerSockFD << " closed" << std::endl;
         if(it != _headers.end() && it->second == "close")
         {
             FD_CLR(connectionServerSockFD, &FDs_readability);
@@ -320,7 +315,6 @@ void sock_server::ManagementFDs(std::vector<server_parser> servers)
                 }
                 else if (FD_ISSET(it->first , &FDs_readability_copy)) 
                 {
-                    std::cout << "socket server" << it->first << " " << (it->second)->get_type_sock() << std::endl;
                     if((it->second)->get_type_sock() == "server_socket")
                         _accept(it->first, ((it->second)->get_server()));
                     else 
