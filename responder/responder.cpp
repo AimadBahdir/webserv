@@ -36,11 +36,6 @@ bool    Responder::_errorsChecker(void)
         this->_statusCode = "400";
         return false;
     }
-    if (this->_request.getMethode().empty())
-    {
-        this->_statusCode = "405";
-        return false;
-    }
     if (this->_request.getMethode().compare("GET") != 0
         && this->_request.getMethode().compare("POST") != 0
         && this->_request.getMethode().compare("DELETE") != 0)
@@ -171,6 +166,13 @@ void    Responder::_prepareResponse(void)
         {
             if (!this->_location.getLocationPath().empty())
             {
+                std::vector<std::string> _acceptedReq   = this->_location.getAcceptedRequeasts();
+                if (_acceptedReq.size() > 0
+                && std::find(_acceptedReq.begin(), _acceptedReq.end(), this->_request.getMethode()) == _acceptedReq.end())
+                {
+                    this->_statusCode = "405";
+                    return;
+                }
                 if (!this->_location.getRedirection().first.empty())
                 {
                     this->_REDIRECT = true;
