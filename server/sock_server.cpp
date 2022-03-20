@@ -6,7 +6,7 @@
 /*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:36 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/03/20 21:08:17 by wben-sai         ###   ########.fr       */
+/*   Updated: 2022/03/20 21:13:15 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,7 +61,7 @@ int sock_server::_create_socket(server_parser srv)
         type 
             SOCK_STREAM : TCP
             SOCK_DGRAM : UDP
-        protocol
+        protocol  
             IP      0       # internet protocol
     ---------------------------------------------------------------------------------------- */
     int fd_sock;
