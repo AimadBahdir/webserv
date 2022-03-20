@@ -18,10 +18,16 @@ Responder::Responder(Responder const & r) { (*this) = r; }
 
 Responder& Responder::operator=(Responder const & r)
 {
-    this->_request = r._request;
-    this->_location = r._location;
-    this->_server = r._server;
-    this->_statusCode = r._statusCode;
+   this->_request = r._request;
+   this->_server = r._server;
+   this->_location = r._location;
+   this->_reqPath = r._reqPath;
+   this->_statusCode = r._statusCode;
+   this->_rootPath = r._rootPath;
+   this->_indexPath = r._indexPath;
+   this->_REDIRECT = r._REDIRECT;
+   this->_UPLOAD = r._UPLOAD;
+   this->_CGI = r._CGI;
     return (*this);
 }
 
