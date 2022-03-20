@@ -11,16 +11,16 @@ if (process.env.REQUEST_METHOD === 'POST')
     let sql = `INSERT INTO users(username, age) VALUES('USER1', '15');`;
     pool.execute(sql, function (err, result) {
         if (result.affectedRows > 0)
-            console.log("USER1 DELTED SUCCESSFULY");
+            console.log("USER1 INSERTED SUCCESSFULY");
         pool.end();
-     })
+    })
 }
 else if (process.env.REQUEST_METHOD == 'DELETE')
 {
     let sql = ` DELETE FROM users WHERE username = 'USER1';`;
     pool.execute(sql, function (err, result) {
         if (result.affectedRows > 0)
-            console.log("USER1 INSERTED SUCCESSFULY");
+            console.log("USER1 DELTED SUCCESSFULY");
         pool.end();
     });
 }
