@@ -6,7 +6,7 @@
 /*   By: wben-sai <wben-sai@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:36 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/03/19 21:47:52 by wben-sai         ###   ########.fr       */
+/*   Updated: 2022/03/20 10:47:35 by wben-sai         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,8 +23,6 @@ sock_server::sock_server(std::vector<server_parser> servers)
     FD_ZERO(&FDs_writability_copy);
     FD_ZERO(&FDs_readability);
     FD_ZERO(&FDs_writability);
-    FD_ZERO(&FDs_check);
-    FD_ZERO(&FDs_check_copy);
     
     for (std::vector<server_parser>::iterator it = servers.begin(); it != servers.end(); it++)
     {
@@ -39,6 +37,12 @@ sock_server::sock_server(std::vector<server_parser> servers)
         if (!is_bind)
         {
             fd_sock = _create_socket(*it);
+            int opt = 1;
+            if (setsockopt(fd_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int)) < 0)
+            {
+                std::cout << "Failed to set option" << std::endl;
+                exit(1);
+            }
             _bind(fd_sock, it->getPort(), it->getHost());
             _listen(fd_sock);
         }
@@ -142,23 +146,25 @@ void sock_server::_accept(int fd_sock, server_parser srv)
     {
         //std::cout << "Client with Id " << connectionServerSockFD << " is connect" << std::endl; 
         FD_SET(connectionServerSockFD, &FDs_readability);
-        std::string file_name = std::to_string(std::time(nullptr)) + "_" + std::to_string(connectionServerSockFD);
+        std::string file_name = std::to_string(std::time(NULL)) + "_" + std::to_string(connectionServerSockFD);
         M_FSRR.insert(std::make_pair(connectionServerSockFD, new SRR("connection_socket",srv, file_name)));
     }
 }
 
-void sock_server::_recv(int connectionServerSockFD)
+bool sock_server::_recv(int connectionServerSockFD)
 {
     char buf[10240];
     ssize_t lenString = recv(connectionServerSockFD, buf, (sizeof(buf)), 0);
-    if(lenString == 0)
+    if(lenString == 0 || lenString == -1)
     {
         FD_CLR(connectionServerSockFD, &FDs_readability);
+        FD_CLR(connectionServerSockFD, &FDs_writability);
         std::map<int, SRR *>::iterator it = M_FSRR.find(connectionServerSockFD);
         if(it != M_FSRR.end())
             delete it->second;
         M_FSRR.erase(connectionServerSockFD);
         close(connectionServerSockFD);
+        return false;
         //std::cout << "Client with Id " << connectionServerSockFD << " is disconnect" << std::endl;
     }
     else
@@ -177,6 +183,7 @@ void sock_server::_recv(int connectionServerSockFD)
         catch(const char *str) {
             //std::cout << str << std::endl;
         }
+        return true;
     }
 }
 
@@ -220,19 +227,10 @@ void sock_server::_send(int connectionServerSockFD, server_parser srv, std::vect
     {   
         srr->FileLength = srr->_getFileLength(pair_response.second);
         srr->file_response = open(pair_response.second.c_str(), O_RDONLY);
-        FD_SET(srr->file_response, &FDs_check);
         res = pair_response.first;
     }
-    FDs_check_copy = FDs_check;
-    int is_ready = select(srr->file_response + 1, &FDs_check_copy, NULL, NULL, 0);
-    if (is_ready == -1)
-    {
-        std::cout << "Select failed" <<  std::endl;
-        exit(1);
-    }
     
-    if (FD_ISSET(srr->file_response, &FDs_check_copy)) 
-        len_read = read(srr->file_response, buf, (sizeof(char) * 10240));
+    len_read = read(srr->file_response, buf, (sizeof(char) * 10240));
     
     if(len_read != -1)
     {
@@ -245,13 +243,12 @@ void sock_server::_send(int connectionServerSockFD, server_parser srv, std::vect
     if (send(connectionServerSockFD, res.c_str() , res.length(), 0) == -1)
     {
         FD_CLR(connectionServerSockFD, &FDs_writability);
-        FD_CLR(srr->file_response, &FDs_check);
         std::map<int, SRR *>::iterator it = M_FSRR.find(connectionServerSockFD);
         if(it != M_FSRR.end())
             delete it->second;
         M_FSRR.erase(connectionServerSockFD);
         close(connectionServerSockFD);
-        close(srr->file_response);
+        //close(srr->file_response);
     }
     else if(srr->Length_read == srr->FileLength)
     {
@@ -260,7 +257,6 @@ void sock_server::_send(int connectionServerSockFD, server_parser srv, std::vect
         close(srr->file_response);
         FD_SET(connectionServerSockFD, &FDs_readability);
         FD_CLR(connectionServerSockFD, &FDs_writability);
-        FD_CLR(srr->file_response, &FDs_check);
         std::map<std::string, std::string> _headers = srr->get_request_parser()->getHeaders();
         std::map<std::string, std::string>::iterator it = _headers.find("Connection");
         if(it != _headers.end() && it->second == "Close")
@@ -269,7 +265,7 @@ void sock_server::_send(int connectionServerSockFD, server_parser srv, std::vect
             close(connectionServerSockFD);
         }
         srr->_number_request++;
-        std::string file_name = std::to_string(std::time(nullptr)) + "_" + std::to_string(connectionServerSockFD)+ "_" + std::to_string(srr->_number_request);
+        std::string file_name = std::to_string(std::time(NULL)) + "_" + std::to_string(connectionServerSockFD)+ "_" + std::to_string(srr->_number_request);
         srr->get_request_parser()->removeFile();
         delete srr->get_request_parser();
         delete srr->get_responser();
@@ -311,7 +307,8 @@ void sock_server::ManagementFDs(std::vector<server_parser> servers)
                     if((it->second)->get_type_sock() == "server_socket")
                         _accept(it->first, ((it->second)->get_server()));
                     else 
-                       _recv(it->first);
+                        if(!_recv(it->first))
+                            break;
                 }
             }
         }
