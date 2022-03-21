@@ -34,12 +34,17 @@ Responder& Responder::operator=(Responder const & r)
 bool    Responder::_errorsChecker(void)
 {
     std::map<std::string, std::string> _headers = this->_request.getHeaders();
-    if ( this->_request.getMethode().empty() || this->_request.getPath().empty() || this->_request.getVersion().empty()
+    if (this->_request.getPath().empty() || this->_request.getVersion().empty()
     || (this->_server.getMaxSzie() > 0 && this->_server.getMaxSzie() < (int)this->_getFileLength(this->_request.getBodyFile()))
     || (_headers.find("Content-Length") != _headers.end() && _headers.find("Transfer-Encoding") != _headers.end())
     || (_headers.find("Host") == _headers.end()))
     {
         this->_statusCode = "400";
+        return false;
+    }
+    if (this->_request.getMethode().empty())
+    {
+        this->_statusCode = "405";
         return false;
     }
     if (this->_request.getMethode().compare("GET") != 0
@@ -135,6 +140,13 @@ void    Responder::_prepareResponse(void)
     struct stat _fstats;
     if (!this->_location.getLocationPath().empty())
     {
+        std::vector<std::string> _acceptedReq   = this->_location.getAcceptedRequeasts();
+        if (_acceptedReq.size() > 0
+        && std::find(_acceptedReq.begin(), _acceptedReq.end(), this->_request.getMethode()) == _acceptedReq.end())
+        {
+            this->_statusCode = "405";
+            return;
+        }
         if (!this->_location.getRedirection().first.empty())
         {
             this->_REDIRECT = true;
@@ -452,12 +464,17 @@ Responder::RESPONSE_DATA Responder::_uploadFile(void)
     if (_fd == -1)
     {
         this->_statusCode = "500";
-        close(_fd);
         return (this->_staticResponse());
     }
     std::string _fileName = "WSUPLOAD"+this->_getDateTime(true)+"."+this->_getMimeType(this->_request.getHeaders().find("Content-Type")->second, true);
-    system(std::string("cp -r "+this->_request.getBodyFile()+" "+this->_trimPath(this->_location.getUploadPath()+"/"+_fileName)).c_str());
-    system("echo 'UPLOADED SUCCESFULY' > /tmp/WSRSP00");
+    close(_fd);
+    if ((_fd = open(this->_request.getBodyFile().c_str(), O_RDONLY)) != -1)
+    {
+        system(std::string("cp -r "+this->_request.getBodyFile()+" "+this->_trimPath(this->_location.getUploadPath()+"/"+_fileName)).c_str());
+        system("echo 'UPLOADED SUCCESFULY' > /tmp/WSRSP00");
+    }
+    else
+        system("echo 'FILE NOT FOUND' > /tmp/WSRSP00");
     close(_fd);
     return (std::make_pair(this->_generateHeaders("/tmp/WSRSP00")+"\r\n", "/tmp/WSRSP00"));
 }
@@ -589,7 +606,9 @@ Responder::RESPONSE_DATA Responder::_errorPagesChecker(void)
                     }
                 }
                 else
+                {
                     return this->_redirectResponse("301", _path);
+                }
             }
         }
     }
