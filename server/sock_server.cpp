@@ -6,7 +6,7 @@
 /*   By: abahdir <abahdir@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/17 10:34:36 by wben-sai          #+#    #+#             */
-/*   Updated: 2022/03/20 22:27:36 by abahdir          ###   ########.fr       */
+/*   Updated: 2022/03/21 12:53:44 by abahdir          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,8 @@ sock_server::sock_server(std::vector<server_parser> servers)
         {
             fd_sock = _create_socket(*it);
             int opt = 1;
-            if (setsockopt(fd_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int)) < 0)
+            if (setsockopt(fd_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int)) < 0
+            || setsockopt(fd_sock, SOL_SOCKET, SO_NOSIGPIPE, &opt, sizeof(int)) < 0)
             {
                 std::cout << "Failed to set option" << std::endl;
                 exit(1);
